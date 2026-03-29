@@ -32,6 +32,7 @@ final class AegisCard extends Card
             $this->periodAsInterval(),
         );
 
+        // @phpstan-ignore argument.type
         return view('aegis::livewire.aegis-card', [
             'blockedInjections' => $blockedInjections,
             'pseudonymizationVolume' => $pseudonymizationVolume,

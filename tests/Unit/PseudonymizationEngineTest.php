@@ -6,7 +6,7 @@ use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
 use MrPunyapal\LaravelAiAegis\Pseudonymization\PseudonymizationEngine;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->cache = new Repository(new ArrayStore);
     $this->engine = new PseudonymizationEngine(
         cache: $this->cache,
@@ -15,7 +15,7 @@ beforeEach(function () {
     );
 });
 
-it('replaces email addresses with tokens', function () {
+it('replaces email addresses with tokens', function (): void {
     $result = $this->engine->pseudonymize(
         'Contact john@example.com for details.',
         ['email'],
@@ -26,7 +26,7 @@ it('replaces email addresses with tokens', function () {
         ->toContain('{{AEGIS_EMAIL_');
 });
 
-it('replaces phone numbers with tokens', function () {
+it('replaces phone numbers with tokens', function (): void {
     $result = $this->engine->pseudonymize(
         'Call me at 555-123-4567.',
         ['phone'],
@@ -37,7 +37,7 @@ it('replaces phone numbers with tokens', function () {
         ->toContain('{{AEGIS_PHONE_');
 });
 
-it('replaces SSN with tokens', function () {
+it('replaces SSN with tokens', function (): void {
     $result = $this->engine->pseudonymize(
         'My SSN is 123-45-6789.',
         ['ssn'],
@@ -48,7 +48,7 @@ it('replaces SSN with tokens', function () {
         ->toContain('{{AEGIS_SSN_');
 });
 
-it('replaces credit card numbers with tokens', function () {
+it('replaces credit card numbers with tokens', function (): void {
     $result = $this->engine->pseudonymize(
         'Card: 4111-1111-1111-1111.',
         ['credit_card'],
@@ -59,7 +59,7 @@ it('replaces credit card numbers with tokens', function () {
         ->toContain('{{AEGIS_CREDIT_CARD_');
 });
 
-it('replaces IP addresses with tokens', function () {
+it('replaces IP addresses with tokens', function (): void {
     $result = $this->engine->pseudonymize(
         'Server IP: 192.168.1.100.',
         ['ip_address'],
@@ -70,7 +70,7 @@ it('replaces IP addresses with tokens', function () {
         ->toContain('{{AEGIS_IP_ADDRESS_');
 });
 
-it('restores tokens back to original values', function () {
+it('restores tokens back to original values', function (): void {
     $original = 'Contact john@example.com for details.';
     $result = $this->engine->pseudonymize($original, ['email']);
 
@@ -79,14 +79,14 @@ it('restores tokens back to original values', function () {
     expect($restored)->toBe($original);
 });
 
-it('handles text with no PII', function () {
+it('handles text with no PII', function (): void {
     $text = 'This is a normal sentence with no PII.';
     $result = $this->engine->pseudonymize($text);
 
     expect($result['text'])->toBe($text);
 });
 
-it('handles multiple PII types in one text', function () {
+it('handles multiple PII types in one text', function (): void {
     $text = 'Email: user@test.com, Phone: 555-888-9999, SSN: 111-22-3333.';
     $result = $this->engine->pseudonymize($text, ['email', 'phone', 'ssn']);
 
@@ -100,7 +100,7 @@ it('handles multiple PII types in one text', function () {
     expect($restored)->toBe($text);
 });
 
-it('returns original text when session not found', function () {
+it('returns original text when session not found', function (): void {
     $text = 'Text with {{AEGIS_EMAIL_ABC12}} token.';
 
     $restored = $this->engine->depseudonymize($text, 'nonexistent-session');
@@ -108,14 +108,14 @@ it('returns original text when session not found', function () {
     expect($restored)->toBe($text);
 });
 
-it('ignores unknown PII types', function () {
+it('ignores unknown PII types', function (): void {
     $text = 'Contact john@example.com.';
     $result = $this->engine->pseudonymize($text, ['unknown_type']);
 
     expect($result['text'])->toBe($text);
 });
 
-it('generates unique session IDs for each pseudonymization', function () {
+it('generates unique session IDs for each pseudonymization', function (): void {
     $result1 = $this->engine->pseudonymize('john@example.com', ['email']);
     $result2 = $this->engine->pseudonymize('jane@example.com', ['email']);
 

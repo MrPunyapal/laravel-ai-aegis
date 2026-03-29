@@ -7,7 +7,7 @@ namespace MrPunyapal\LaravelAiAegis\Pseudonymization;
 use Illuminate\Contracts\Cache\Repository;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
 
-final class PseudonymizationEngine implements PiiDetectorInterface
+final readonly class PseudonymizationEngine implements PiiDetectorInterface
 {
     /**
      * Regex patterns for detecting common PII types.
@@ -23,9 +23,9 @@ final class PseudonymizationEngine implements PiiDetectorInterface
     ];
 
     public function __construct(
-        private readonly Repository $cache,
-        private readonly string $prefix = 'aegis_pii',
-        private readonly int $ttl = 3600,
+        private Repository $cache,
+        private string $prefix = 'aegis_pii',
+        private int $ttl = 3600,
     ) {}
 
     /**

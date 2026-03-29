@@ -12,12 +12,12 @@ use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Exceptions\AegisSecurityException;
 use ReflectionClass;
 
-final class AegisMiddleware
+final readonly class AegisMiddleware
 {
     public function __construct(
-        private readonly PiiDetectorInterface $piiDetector,
-        private readonly InjectionDetectorInterface $injectionDetector,
-        private readonly RecorderInterface $recorder,
+        private PiiDetectorInterface $piiDetector,
+        private InjectionDetectorInterface $injectionDetector,
+        private RecorderInterface $recorder,
     ) {}
 
     /**

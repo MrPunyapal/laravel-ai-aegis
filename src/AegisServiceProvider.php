@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MrPunyapal\LaravelAiAegis;
 
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Contracts\Foundation\Application;
+use Livewire\Livewire;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
@@ -36,7 +38,7 @@ final class AegisServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         if ($this->app->bound('livewire')) {
-            \Livewire\Livewire::component('aegis-card', AegisCard::class);
+            Livewire::component('aegis-card', AegisCard::class);
         }
     }
 
@@ -46,26 +48,27 @@ final class AegisServiceProvider extends PackageServiceProvider
      */
     private function registerPseudonymizationEngine(): void
     {
-        $this->app->singleton(PiiDetectorInterface::class, function ($app): PseudonymizationEngine {
+        $this->app->singleton(PiiDetectorInterface::class, function (Application $app): PseudonymizationEngine {
             /** @var array{store: string, prefix: string, ttl: int} $config */
             $config = $app['config']['aegis.cache'];
 
             if (PHP_VERSION_ID >= 80400) {
                 $reflector = new ReflectionClass(PseudonymizationEngine::class);
 
+                // @phpstan-ignore method.notFound
                 return $reflector->newLazyGhost(function (PseudonymizationEngine $engine) use ($app, $config): void {
                     $engine->__construct(
                         cache: $app->make(Repository::class),
-                        prefix: $config['prefix'] ?? 'aegis_pii',
-                        ttl: $config['ttl'] ?? 3600,
+                        prefix: $config['prefix'],
+                        ttl: $config['ttl'],
                     );
                 });
             }
 
             return new PseudonymizationEngine(
                 cache: $app->make(Repository::class),
-                prefix: $config['prefix'] ?? 'aegis_pii',
-                ttl: $config['ttl'] ?? 3600,
+                prefix: $config['prefix'],
+                ttl: $config['ttl'],
             );
         });
     }
@@ -80,6 +83,7 @@ final class AegisServiceProvider extends PackageServiceProvider
             if (PHP_VERSION_ID >= 80400) {
                 $reflector = new ReflectionClass(PromptInjectionDetector::class);
 
+                // @phpstan-ignore method.notFound
                 return $reflector->newLazyGhost(function (PromptInjectionDetector $detector): void {
                     $detector->__construct();
                 });

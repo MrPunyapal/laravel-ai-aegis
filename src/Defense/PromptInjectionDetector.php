@@ -6,7 +6,7 @@ namespace MrPunyapal\LaravelAiAegis\Defense;
 
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 
-final class PromptInjectionDetector implements InjectionDetectorInterface
+final readonly class PromptInjectionDetector implements InjectionDetectorInterface
 {
     /**
      * Known adversarial attack patterns mapped to severity weights (0.0 - 1.0).
@@ -51,7 +51,7 @@ final class PromptInjectionDetector implements InjectionDetectorInterface
      * @param  array<string, float>  $customVectors
      */
     public function __construct(
-        private readonly array $customVectors = [],
+        private array $customVectors = [],
     ) {}
 
     /**
