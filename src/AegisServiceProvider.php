@@ -7,6 +7,7 @@ namespace MrPunyapal\LaravelAiAegis;
 use Illuminate\Contracts\Cache\Repository;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Defense\PromptInjectionDetector;
 use MrPunyapal\LaravelAiAegis\Pseudonymization\PseudonymizationEngine;
 use MrPunyapal\LaravelAiAegis\Pulse\AegisCard;
@@ -34,50 +35,62 @@ final class AegisServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        if (class_exists(\Livewire\Livewire::class)) {
+        if ($this->app->bound('livewire')) {
             \Livewire\Livewire::component('aegis-card', AegisCard::class);
         }
     }
 
     /**
-     * Register the PseudonymizationEngine as a PHP 8.5 Lazy Ghost for memory efficiency.
-     * The engine is only initialized when first accessed, avoiding cache connections on every request.
+     * Register the PseudonymizationEngine, using a PHP 8.4+ Lazy Ghost when available
+     * for memory efficiency, falling back to eager instantiation on PHP 8.3.
      */
     private function registerPseudonymizationEngine(): void
     {
         $this->app->singleton(PiiDetectorInterface::class, function ($app): PseudonymizationEngine {
-            $reflector = new ReflectionClass(PseudonymizationEngine::class);
+            /** @var array{store: string, prefix: string, ttl: int} $config */
+            $config = $app['config']['aegis.cache'];
 
-            return $reflector->newLazyGhost(function (PseudonymizationEngine $engine) use ($app): void {
-                /** @var array{store: string, prefix: string, ttl: int} $config */
-                $config = $app['config']['aegis.cache'];
+            if (PHP_VERSION_ID >= 80400) {
+                $reflector = new ReflectionClass(PseudonymizationEngine::class);
 
-                $engine->__construct(
-                    cache: $app->make(Repository::class),
-                    prefix: $config['prefix'] ?? 'aegis_pii',
-                    ttl: $config['ttl'] ?? 3600,
-                );
-            });
+                return $reflector->newLazyGhost(function (PseudonymizationEngine $engine) use ($app, $config): void {
+                    $engine->__construct(
+                        cache: $app->make(Repository::class),
+                        prefix: $config['prefix'] ?? 'aegis_pii',
+                        ttl: $config['ttl'] ?? 3600,
+                    );
+                });
+            }
+
+            return new PseudonymizationEngine(
+                cache: $app->make(Repository::class),
+                prefix: $config['prefix'] ?? 'aegis_pii',
+                ttl: $config['ttl'] ?? 3600,
+            );
         });
     }
 
     /**
-     * Register the PromptInjectionDetector as a PHP 8.5 Lazy Ghost for memory efficiency.
-     * The detector's attack vector database is only loaded into memory when a prompt is evaluated.
+     * Register the PromptInjectionDetector, using a PHP 8.4+ Lazy Ghost when available
+     * for memory efficiency, falling back to eager instantiation on PHP 8.3.
      */
     private function registerInjectionDetector(): void
     {
         $this->app->singleton(InjectionDetectorInterface::class, function (): PromptInjectionDetector {
-            $reflector = new ReflectionClass(PromptInjectionDetector::class);
+            if (PHP_VERSION_ID >= 80400) {
+                $reflector = new ReflectionClass(PromptInjectionDetector::class);
 
-            return $reflector->newLazyGhost(function (PromptInjectionDetector $detector): void {
-                $detector->__construct();
-            });
+                return $reflector->newLazyGhost(function (PromptInjectionDetector $detector): void {
+                    $detector->__construct();
+                });
+            }
+
+            return new PromptInjectionDetector;
         });
     }
 
     private function registerRecorder(): void
     {
-        $this->app->singleton(AegisRecorder::class);
+        $this->app->singleton(RecorderInterface::class, AegisRecorder::class);
     }
 }

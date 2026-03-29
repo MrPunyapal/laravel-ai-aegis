@@ -8,8 +8,8 @@ use Closure;
 use MrPunyapal\LaravelAiAegis\Attributes\Aegis;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Exceptions\AegisSecurityException;
-use MrPunyapal\LaravelAiAegis\Pulse\AegisRecorder;
 use ReflectionClass;
 
 final class AegisMiddleware
@@ -17,7 +17,7 @@ final class AegisMiddleware
     public function __construct(
         private readonly PiiDetectorInterface $piiDetector,
         private readonly InjectionDetectorInterface $injectionDetector,
-        private readonly AegisRecorder $recorder,
+        private readonly RecorderInterface $recorder,
     ) {}
 
     /**

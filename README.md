@@ -12,13 +12,13 @@ A native, **local-first** security middleware for the **Laravel 13 AI SDK**. Aeg
 - **Localized Prompt Injection Defense** — A built-in semantic firewall evaluates prompts against 30+ known adversarial attack patterns (jailbreaks, system prompt extraction, DAN mode, etc.) entirely locally — no external API call required.
 - **Declarative Attribute Configuration** — Use the `#[Aegis]` PHP attribute on individual Agent classes to apply granular, per-agent security rules.
 - **Laravel Pulse Integration** — A first-class Pulse card delivers real-time telemetry: blocked injections, pseudonymization volume, and estimated compute capital saved.
-- **PHP 8.5 Lazy Objects** — All heavy services are registered as Lazy Ghost objects, so memory is only allocated when a service is actually used in the request lifecycle.
+- **PHP 8.4+ Lazy Objects** — On PHP 8.4 and above, all heavy services are registered as Lazy Ghost objects, so memory is only allocated when a service is actually used in the request lifecycle. PHP 8.3 falls back to eager instantiation.
 
 ## Requirements
 
 | Dependency | Version |
 |---|---|
-| PHP | `^8.5` |
+| PHP | `^8.3 \| ^8.4 \| ^8.5` |
 | Laravel | `^13.0` |
 | Laravel Pulse *(optional)* | `^1.0` |
 

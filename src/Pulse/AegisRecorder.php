@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace MrPunyapal\LaravelAiAegis\Pulse;
 
 use Illuminate\Support\Facades\Config;
+use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 
-final class AegisRecorder
+final class AegisRecorder implements RecorderInterface
 {
     public function recordBlockedInjection(float $score): void
     {

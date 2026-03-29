@@ -5,14 +5,14 @@ declare(strict_types=1);
 use MrPunyapal\LaravelAiAegis\Attributes\Aegis;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Exceptions\AegisSecurityException;
 use MrPunyapal\LaravelAiAegis\Middleware\AegisMiddleware;
-use MrPunyapal\LaravelAiAegis\Pulse\AegisRecorder;
 
 beforeEach(function () {
     $this->piiDetector = Mockery::mock(PiiDetectorInterface::class);
     $this->injectionDetector = Mockery::mock(InjectionDetectorInterface::class);
-    $this->recorder = Mockery::mock(AegisRecorder::class)->shouldIgnoreMissing();
+    $this->recorder = Mockery::mock(RecorderInterface::class)->shouldIgnoreMissing();
 
     $this->middleware = new AegisMiddleware(
         piiDetector: $this->piiDetector,
