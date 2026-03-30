@@ -31,6 +31,11 @@ final readonly class AegisMiddleware
     public function handle(object $prompt, Closure $next): mixed
     {
         $config = $this->resolveConfiguration($prompt);
+
+        if (! $config->blockInjections && ! $config->pseudonymize) {
+            return $next($prompt)->then(fn (object $response): object => $response);
+        }
+
         $content = $prompt->content();
 
         // Phase 1: Localized Prompt Injection Defense
