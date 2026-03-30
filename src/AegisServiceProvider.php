@@ -67,6 +67,7 @@ final class AegisServiceProvider extends PackageServiceProvider
             $config = $app['config']['aegis.cache'];
 
             if (PHP_VERSION_ID >= 80400) {
+                // @codeCoverageIgnoreStart
                 $reflector = new ReflectionClass(PseudonymizationEngine::class);
 
                 return $reflector->newLazyGhost(function (PseudonymizationEngine $engine) use ($app, $config): void {
@@ -76,6 +77,7 @@ final class AegisServiceProvider extends PackageServiceProvider
                         ttl: $config['ttl'],
                     );
                 });
+                // @codeCoverageIgnoreEnd
             }
 
             // @codeCoverageIgnoreStart
@@ -96,11 +98,13 @@ final class AegisServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(InjectionDetectorInterface::class, function (): PromptInjectionDetector {
             if (PHP_VERSION_ID >= 80400) {
+                // @codeCoverageIgnoreStart
                 $reflector = new ReflectionClass(PromptInjectionDetector::class);
 
                 return $reflector->newLazyGhost(function (PromptInjectionDetector $detector): void {
                     $detector->__construct();
                 });
+                // @codeCoverageIgnoreEnd
             }
 
             // @codeCoverageIgnoreStart
