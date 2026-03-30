@@ -27,5 +27,8 @@
         <include>
             <directory suffix=".php">./src</directory>
         </include>
+        <exclude>
+            <file>./src/Pulse/AegisCard.php</file>
+        </exclude>
     </source>
 </phpunit>

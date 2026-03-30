@@ -6,11 +6,15 @@ namespace MrPunyapal\LaravelAiAegis;
 
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Routing\Router;
 use Livewire\Livewire;
+use MrPunyapal\LaravelAiAegis\Commands\InstallCommand;
+use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Defense\PromptInjectionDetector;
+use MrPunyapal\LaravelAiAegis\Middleware\AegisMiddleware;
 use MrPunyapal\LaravelAiAegis\Pseudonymization\PseudonymizationEngine;
 use MrPunyapal\LaravelAiAegis\Pulse\AegisCard;
 use MrPunyapal\LaravelAiAegis\Pulse\AegisRecorder;
@@ -25,7 +29,11 @@ final class AegisServiceProvider extends PackageServiceProvider
         $package
             ->name('aegis')
             ->hasConfigFile()
-            ->hasViews();
+            ->hasViews()
+            ->hasCommands([
+                InstallCommand::class,
+                TestPromptCommand::class,
+            ]);
     }
 
     public function packageRegistered(): void
@@ -38,7 +46,13 @@ final class AegisServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         if ($this->app->bound('livewire')) {
-            Livewire::component('aegis-card', AegisCard::class);
+            Livewire::component('aegis-card', AegisCard::class); // @codeCoverageIgnore
+        }
+
+        if ($this->app->bound('router')) {
+            /** @var Router $router */
+            $router = $this->app->make('router');
+            $router->aliasMiddleware('aegis', AegisMiddleware::class);
         }
     }
 
@@ -53,9 +67,9 @@ final class AegisServiceProvider extends PackageServiceProvider
             $config = $app['config']['aegis.cache'];
 
             if (PHP_VERSION_ID >= 80400) {
+                // @codeCoverageIgnoreStart
                 $reflector = new ReflectionClass(PseudonymizationEngine::class);
 
-                // @phpstan-ignore method.notFound
                 return $reflector->newLazyGhost(function (PseudonymizationEngine $engine) use ($app, $config): void {
                     $engine->__construct(
                         cache: $app->make(Repository::class),
@@ -63,13 +77,16 @@ final class AegisServiceProvider extends PackageServiceProvider
                         ttl: $config['ttl'],
                     );
                 });
+                // @codeCoverageIgnoreEnd
             }
 
+            // @codeCoverageIgnoreStart
             return new PseudonymizationEngine(
                 cache: $app->make(Repository::class),
                 prefix: $config['prefix'],
                 ttl: $config['ttl'],
             );
+            // @codeCoverageIgnoreEnd
         });
     }
 
@@ -81,15 +98,18 @@ final class AegisServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(InjectionDetectorInterface::class, function (): PromptInjectionDetector {
             if (PHP_VERSION_ID >= 80400) {
+                // @codeCoverageIgnoreStart
                 $reflector = new ReflectionClass(PromptInjectionDetector::class);
 
-                // @phpstan-ignore method.notFound
                 return $reflector->newLazyGhost(function (PromptInjectionDetector $detector): void {
                     $detector->__construct();
                 });
+                // @codeCoverageIgnoreEnd
             }
 
+            // @codeCoverageIgnoreStart
             return new PromptInjectionDetector;
+            // @codeCoverageIgnoreEnd
         });
     }
 

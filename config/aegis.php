@@ -27,13 +27,9 @@ return [
     |
     */
 
-    'pii_types' => [
-        'email',
-        'phone',
-        'ssn',
-        'credit_card',
-        'ip_address',
-    ],
+    'pii_types' => array_filter(
+        array_map(trim(...), explode(',', (string) env('AEGIS_PII_TYPES', 'email,phone,ssn,credit_card,ip_address'))),
+    ),
 
     /*
     |--------------------------------------------------------------------------

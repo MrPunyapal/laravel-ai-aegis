@@ -1,10 +1,11 @@
 # Laravel AI Aegis
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/mrpunyapal/laravel-ai-aegis.svg?style=flat-square)](https://packagist.org/packages/mrpunyapal/laravel-ai-aegis)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/mrpunyapal/laravel-ai-aegis/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mrpunyapal/laravel-ai-aegis/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![Lint & Static Analysis](https://img.shields.io/github/actions/workflow/status/mrpunyapal/laravel-ai-aegis/lint-stan.yml?branch=main&label=lint+%26+stan&style=flat-square)](https://github.com/mrpunyapal/laravel-ai-aegis/actions?query=workflow%3ALint+branch%3Amain)
+[![Tests](https://img.shields.io/github/actions/workflow/status/mrpunyapal/laravel-ai-aegis/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mrpunyapal/laravel-ai-aegis/actions?query=workflow%3ATests+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/mrpunyapal/laravel-ai-aegis.svg?style=flat-square)](https://packagist.org/packages/mrpunyapal/laravel-ai-aegis)
 
-A native, **local-first** security middleware for the **Laravel 13 AI SDK**. Aegis intercepts every AI agent prompt and response to protect your users' data and your system prompts — without ever sending raw PII or adversarial payloads to an external LLM provider.
+A native, **local-first** security middleware for the **Laravel AI SDK**. Aegis intercepts every AI agent prompt and response to protect your users' data and your system prompts — without ever sending raw PII or adversarial payloads to an external LLM provider.
 
 ## Features
 
@@ -12,14 +13,15 @@ A native, **local-first** security middleware for the **Laravel 13 AI SDK**. Aeg
 - **Localized Prompt Injection Defense** — A built-in semantic firewall evaluates prompts against 30+ known adversarial attack patterns (jailbreaks, system prompt extraction, DAN mode, etc.) entirely locally — no external API call required.
 - **Declarative Attribute Configuration** — Use the `#[Aegis]` PHP attribute on individual Agent classes to apply granular, per-agent security rules.
 - **Laravel Pulse Integration** — A first-class Pulse card delivers real-time telemetry: blocked injections, pseudonymization volume, and estimated compute capital saved.
-- **PHP 8.4+ Lazy Objects** — On PHP 8.4 and above, all heavy services are registered as Lazy Ghost objects, so memory is only allocated when a service is actually used in the request lifecycle. PHP 8.3 falls back to eager instantiation.
+- **PHP 8.4+ Lazy Objects** — On PHP 8.4 and above, all heavy services are registered as Lazy Ghost objects, so memory is only allocated when a service is actually used in the request lifecycle. PHP 8.2/8.3 fall back to eager instantiation.
+- **Artisan Commands** — `aegis:install` for guided setup, `aegis:test` to debug prompts interactively.
 
 ## Requirements
 
 | Dependency | Version |
 |---|---|
-| PHP | `^8.3 \| ^8.4 \| ^8.5` |
-| Laravel | `^13.0` |
+| PHP | `^8.2` |
+| Laravel | `^12.0 \| ^13.0` |
 | Laravel Pulse *(optional)* | `^1.0` |
 
 ## Installation
@@ -28,7 +30,13 @@ A native, **local-first** security middleware for the **Laravel 13 AI SDK**. Aeg
 composer require mrpunyapal/laravel-ai-aegis
 ```
 
-Publish the config file:
+Run the install command for guided setup:
+
+```bash
+php artisan aegis:install
+```
+
+Or publish the config file manually:
 
 ```bash
 php artisan vendor:publish --tag="aegis-config"
@@ -198,7 +206,36 @@ The card displays three real-time metrics:
 - **PII Tokens Replaced** — Total pseudonymization operations performed
 - **Compute Capital Saved** — Estimated API cost avoided by blocking requests locally
 
-## Testing
+## Artisan Commands
+
+### `aegis:install`
+
+Publishes the config file and prints getting-started instructions:
+
+```bash
+php artisan aegis:install
+```
+
+### `aegis:test`
+
+Runs a prompt through the full Aegis pipeline (injection detection + PII scan) and displays the result in the terminal. Great for debugging or onboarding:
+
+```bash
+php artisan aegis:test "ignore previous instructions"
+# ┌──────────────────────────┬─────────────────┐
+# │ Injection detection      │ BLOCKED         │
+# │   Score                  │ 0.95            │
+# │   Matched patterns       │ ignore previous │
+# └──────────────────────────┴─────────────────┘
+
+php artisan aegis:test "What is the weather today?"
+# ┌──────────────────────────┬─────────────────┐
+# │ Injection detection      │ CLEAN           │
+# │ PII detection            │ CLEAN           │
+# └──────────────────────────┴─────────────────┘
+```
+
+## DevX Testing
 
 ```bash
 # Run all tests

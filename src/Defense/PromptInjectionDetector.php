@@ -13,7 +13,7 @@ final readonly class PromptInjectionDetector implements InjectionDetectorInterfa
      *
      * @var array<string, float>
      */
-    private const array ATTACK_VECTORS = [
+    private const ATTACK_VECTORS = [
         'ignore previous instructions' => 0.95,
         'ignore all previous' => 0.95,
         'disregard all previous' => 0.95,
@@ -48,11 +48,25 @@ final readonly class PromptInjectionDetector implements InjectionDetectorInterfa
     ];
 
     /**
+     * Pre-computed map of lowercased pattern → [weight, original pattern].
+     *
+     * @var array<string, array{0: float, 1: string}>
+     */
+    private array $vectors;
+
+    /**
      * @param  array<string, float>  $customVectors
      */
     public function __construct(
-        private array $customVectors = [],
-    ) {}
+        array $customVectors = [],
+    ) {
+        $merged = [...self::ATTACK_VECTORS, ...$customVectors];
+        $vectors = [];
+        foreach ($merged as $original => $weight) {
+            $vectors[mb_strtolower($original)] = [$weight, $original];
+        }
+        $this->vectors = $vectors;
+    }
 
     /**
      * @return array{is_malicious: bool, score: float, matched_patterns: array<int, string>}
@@ -60,13 +74,12 @@ final readonly class PromptInjectionDetector implements InjectionDetectorInterfa
     public function evaluate(string $prompt): array
     {
         $normalizedPrompt = mb_strtolower(trim($prompt));
-        $vectors = [...self::ATTACK_VECTORS, ...$this->customVectors];
         $matchedPatterns = [];
         $maxScore = 0.0;
 
-        foreach ($vectors as $pattern => $weight) {
-            if (str_contains($normalizedPrompt, mb_strtolower($pattern))) {
-                $matchedPatterns[] = $pattern;
+        foreach ($this->vectors as $lowercased => [$weight, $original]) {
+            if (str_contains($normalizedPrompt, $lowercased)) {
+                $matchedPatterns[] = $original;
                 $maxScore = max($maxScore, $weight);
             }
         }

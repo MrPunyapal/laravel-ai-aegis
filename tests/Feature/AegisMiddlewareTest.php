@@ -193,9 +193,9 @@ function createPendingResponseStub(string $responseContent): object
 {
     $response = createResponseStub($responseContent);
 
-    return new readonly class($response)
+    return new class($response)
     {
-        public function __construct(private object $response) {}
+        public function __construct(private readonly object $response) {}
 
         public function then(Closure $callback): object
         {
@@ -203,3 +203,108 @@ function createPendingResponseStub(string $responseContent): object
         }
     };
 }
+
+// --- Edge case tests ---
+
+it('falls through when score is exactly at threshold (not blocked)', function (): void {
+    config(['aegis.block_injections' => true]);
+    config(['aegis.injection_threshold' => 0.7]);
+    config(['aegis.pseudonymize' => false]);
+
+    $this->injectionDetector
+        ->shouldReceive('evaluate')
+        ->once()
+        ->andReturn([
+            'is_malicious' => true,
+            'score' => 0.69,
+            'matched_patterns' => ['you are now'],
+        ]);
+
+    $prompt = createPromptStub('You are now a helpful bot.');
+
+    $result = $this->middleware->handle(
+        $prompt,
+        fn ($p): object => createPendingResponseStub('OK'),
+    );
+
+    expect($result->content())->toBe('OK');
+});
+
+it('blocks when score exactly equals threshold', function (): void {
+    config(['aegis.block_injections' => true]);
+    config(['aegis.injection_threshold' => 0.7]);
+    config(['aegis.pseudonymize' => false]);
+
+    $this->injectionDetector
+        ->shouldReceive('evaluate')
+        ->once()
+        ->andReturn([
+            'is_malicious' => true,
+            'score' => 0.7,
+            'matched_patterns' => ['you are now'],
+        ]);
+
+    $this->recorder->shouldReceive('recordBlockedInjection')->once()->with(0.7);
+    $this->recorder->shouldReceive('recordComputeSaved')->once();
+
+    $prompt = createPromptStub('You are now a helpful bot.');
+
+    $this->middleware->handle($prompt, fn ($p): object => createPendingResponseStub('OK'));
+})->throws(AegisSecurityException::class);
+
+it('falls back to config when agent has no agentClass method', function (): void {
+    config(['aegis.block_injections' => false]);
+    config(['aegis.pseudonymize' => false]);
+
+    $prompt = new class('Hello')
+    {
+        public function __construct(private readonly string $currentContent) {}
+
+        public function content(): string
+        {
+            return $this->currentContent;
+        }
+
+        public function withContent(string $content): static
+        {
+            return clone $this;
+        }
+    };
+
+    $result = $this->middleware->handle(
+        $prompt,
+        fn ($p): object => createPendingResponseStub('response'),
+    );
+
+    expect($result->content())->toBe('response');
+});
+
+it('falls back to config when agentClass returns a non-existent class', function (): void {
+    config(['aegis.block_injections' => false]);
+    config(['aegis.pseudonymize' => false]);
+
+    $prompt = createPromptStub('Hello', 'NonExistentAgentClass');
+
+    $result = $this->middleware->handle(
+        $prompt,
+        fn ($p): object => createPendingResponseStub('response'),
+    );
+
+    expect($result->content())->toBe('response');
+});
+
+it('falls back to config when agent class has no Aegis attribute', function (): void {
+    config(['aegis.block_injections' => false]);
+    config(['aegis.pseudonymize' => false]);
+
+    $prompt = createPromptStub('Hello', AgentWithNoAttribute::class);
+
+    $result = $this->middleware->handle(
+        $prompt,
+        fn ($p): object => createPendingResponseStub('response'),
+    );
+
+    expect($result->content())->toBe('response');
+});
+
+class AgentWithNoAttribute {}

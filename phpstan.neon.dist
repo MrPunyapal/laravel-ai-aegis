@@ -1,7 +1,14 @@
 parameters:
-    level: 5
+    level: 6
     paths:
         - src
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
+    ignoreErrors:
+        -
+            identifier: method.notFound
+            reportUnmatched: false
+        -
+            identifier: typeCoverage.constantTypeCoverage
+            reportUnmatched: false

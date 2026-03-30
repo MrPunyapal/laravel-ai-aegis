@@ -1,6 +1,6 @@
 {
     "name": "mrpunyapal/laravel-ai-aegis",
-    "description": "A native, local-first security middleware for the Laravel 13 AI SDK with bidirectional pseudonymization, prompt injection defense, and real-time Pulse telemetry.",
+    "description": "A native, local-first security middleware for the Laravel AI SDK with bidirectional pseudonymization, prompt injection defense, and real-time Pulse telemetry.",
     "keywords": [
         "laravel",
         "ai",
@@ -21,10 +21,10 @@
         }
     ],
     "require": {
-        "php": "^8.3|^8.4|^8.5",
-        "illuminate/cache": "^13.0",
-        "illuminate/contracts": "^13.0",
-        "illuminate/support": "^13.0",
+        "php": "^8.2",
+        "illuminate/cache": "^12.0|^13.0",
+        "illuminate/contracts": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
         "spatie/laravel-package-tools": "^1.16"
     },
     "require-dev": {
@@ -32,8 +32,8 @@
         "laravel/pint": "^1.14",
         "laravel/pulse": "^1.0",
         "mrpunyapal/rector-pest": "^0.1.0",
-        "nunomaduro/collision": "^8.1.1",
-        "orchestra/testbench": "^11.0.0",
+        "nunomaduro/collision": "^8.1.1||^9.0",
+        "orchestra/testbench": "^10.0|^11.0",
         "pestphp/pest": "^3.0||^4.0",
         "pestphp/pest-plugin-arch": "^3.0||^4.0",
         "pestphp/pest-plugin-laravel": "^3.0||^4.0",
