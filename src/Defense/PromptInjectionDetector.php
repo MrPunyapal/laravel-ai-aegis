@@ -13,7 +13,7 @@ final readonly class PromptInjectionDetector implements InjectionDetectorInterfa
      *
      * @var array<string, float>
      */
-    private const ATTACK_VECTORS = [
+    private const array ATTACK_VECTORS = [
         'ignore previous instructions' => 0.95,
         'ignore all previous' => 0.95,
         'disregard all previous' => 0.95,

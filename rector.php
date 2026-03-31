@@ -23,5 +23,5 @@ return RectorConfig::configure()
         PestSetList::PEST_CODE_QUALITY,
         PestLevelSetList::UP_TO_PEST_30,
     ])
-    ->withPhpSets(php82: true)
+    ->withPhpSets(php83: true)
     ->withImportNames();
