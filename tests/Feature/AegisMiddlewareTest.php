@@ -193,9 +193,9 @@ function createPendingResponseStub(string $responseContent): object
 {
     $response = createResponseStub($responseContent);
 
-    return new class($response)
+    return new readonly class($response)
     {
-        public function __construct(private readonly object $response) {}
+        public function __construct(private object $response) {}
 
         public function then(Closure $callback): object
         {
@@ -256,9 +256,9 @@ it('falls back to config when agent has no agentClass method', function (): void
     config(['aegis.block_injections' => false]);
     config(['aegis.pseudonymize' => false]);
 
-    $prompt = new class('Hello')
+    $prompt = new readonly class('Hello')
     {
-        public function __construct(private readonly string $currentContent) {}
+        public function __construct(private string $currentContent) {}
 
         public function content(): string
         {
