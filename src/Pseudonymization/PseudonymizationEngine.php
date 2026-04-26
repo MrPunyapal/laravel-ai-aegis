@@ -5,81 +5,117 @@ declare(strict_types=1);
 namespace MrPunyapal\LaravelAiAegis\Pseudonymization;
 
 use Illuminate\Contracts\Cache\Repository;
-use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeRegistryInterface;
+use MrPunyapal\LaravelAiAegis\Data\PiiRuleConfig;
+use MrPunyapal\LaravelAiAegis\Data\TransformResult;
+use MrPunyapal\LaravelAiAegis\Enums\PiiAction;
 
-final readonly class PseudonymizationEngine implements PiiDetectorInterface
+final class PseudonymizationEngine implements PiiTransformerInterface
 {
-    /**
-     * Regex patterns for detecting common PII types.
-     *
-     * @var array<string, string>
-     */
-    private const array PATTERNS = [
-        'email' => '/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/',
-        'phone' => '/\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}\b/',
-        'ssn' => '/\b\d{3}-\d{2}-\d{4}\b/',
-        'credit_card' => '/\b(?:\d{4}[-\s]?){3}\d{4}\b/',
-        'ip_address' => '/\b(?:\d{1,3}\.){3}\d{1,3}\b/',
-    ];
-
     public function __construct(
-        private Repository $cache,
-        private string $prefix = 'aegis_pii',
-        private int $ttl = 3600,
+        private readonly Repository $cache,
+        private readonly PiiTypeRegistryInterface $registry,
+        private readonly string $prefix = 'aegis_pii',
+        private readonly int $ttl = 3600,
     ) {}
 
     /**
-     * @param  array<int, string>  $piiTypes
-     * @return array{text: string, session_id: string}
+     * @param  array<int, PiiRuleConfig>  $rules
      */
-    public function pseudonymize(string $text, array $piiTypes = []): array
+    public function transform(string $text, array $rules): TransformResult
     {
         $sessionId = bin2hex(random_bytes(16));
-        $mappings = [];
-        $activeTypes = $piiTypes !== [] ? $piiTypes : array_keys(self::PATTERNS);
+        /** @var array<string, string> $tokenMap */
+        $tokenMap = [];
+        $tokenCount = 0;
 
-        foreach ($activeTypes as $type) {
-            if (! isset(self::PATTERNS[$type])) {
+        foreach ($rules as $rule) {
+            if (! $this->registry->has($rule->type)) {
                 continue;
             }
 
-            $text = (string) preg_replace_callback(
-                self::PATTERNS[$type],
-                function (array $matches) use ($type, &$mappings): string {
-                    $token = $this->generateToken($type);
-                    $mappings[$token] = $matches[0];
+            $pattern = $this->registry->get($rule->type)->pattern();
 
-                    return $token;
+            $text = (string) preg_replace_callback(
+                $pattern,
+                function (array $matches) use ($rule, &$tokenMap, &$tokenCount): string {
+                    $tokenCount++;
+
+                    return match ($rule->action) {
+                        PiiAction::Tokenize => $this->applyTokenize($matches[0], $rule, $tokenMap),
+                        PiiAction::Replace => $this->applyReplace($rule),
+                        PiiAction::Mask => $this->applyMask($matches[0], $rule),
+                    };
                 },
                 $text,
             );
         }
 
-        if ($mappings !== []) {
+        if ($tokenMap !== []) {
             $this->cache->put(
                 "{$this->prefix}:{$sessionId}",
-                $mappings,
+                $tokenMap,
                 $this->ttl,
             );
         }
 
-        return ['text' => $text, 'session_id' => $sessionId];
+        return new TransformResult(
+            text: $text,
+            sessionId: $sessionId,
+            tokenCount: $tokenCount,
+            tokenMap: $tokenMap,
+        );
     }
 
-    public function depseudonymize(string $text, string $sessionId): string
+    public function restore(string $text, string $sessionId): string
     {
-        /** @var array<string, string>|null $mappings */
-        $mappings = $this->cache->get("{$this->prefix}:{$sessionId}");
+        /** @var array<string, string>|null $tokenMap */
+        $tokenMap = $this->cache->get("{$this->prefix}:{$sessionId}");
 
-        if ($mappings === null) {
+        if ($tokenMap === null) {
             return $text;
         }
 
         return str_replace(
-            array_keys($mappings),
-            array_values($mappings),
+            array_keys($tokenMap),
+            array_values($tokenMap),
             $text,
         );
+    }
+
+    /**
+     * @param  array<string, string>  $tokenMap
+     */
+    private function applyTokenize(string $value, PiiRuleConfig $rule, array &$tokenMap): string
+    {
+        $token = $this->generateToken($rule->type);
+        $tokenMap[$token] = $value;
+
+        return $token;
+    }
+
+    private function applyReplace(PiiRuleConfig $rule): string
+    {
+        return $rule->replacement !== ''
+            ? $rule->replacement
+            : '[REDACTED:'.strtoupper($rule->type).']';
+    }
+
+    private function applyMask(string $value, PiiRuleConfig $rule): string
+    {
+        $length = mb_strlen($value);
+        $keep = $rule->maskStart + $rule->maskEnd;
+
+        if ($keep === 0 || $keep >= $length) {
+            return str_repeat($rule->maskChar(), $length);
+        }
+
+        $start = mb_substr($value, 0, $rule->maskStart);
+        $end = mb_substr($value, -$rule->maskEnd);
+        $masked = str_repeat($rule->maskChar(), $length - $keep);
+
+        return $start.$masked.$end;
     }
 
     private function generateToken(string $type): string
