@@ -62,7 +62,7 @@ return [
                 'threshold' => env('AEGIS_INJECTION_THRESHOLD', 0.7),
                 'strict_threshold' => 0.3,
             ],
-            'max_length' => env('AEGIS_MAX_INPUT_LENGTH', null),
+            'max_length' => env('AEGIS_MAX_INPUT_LENGTH'),
             'blocked_phrases' => [],
         ],
 

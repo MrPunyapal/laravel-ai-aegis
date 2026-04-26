@@ -11,13 +11,13 @@ use MrPunyapal\LaravelAiAegis\Data\PiiRuleConfig;
 use MrPunyapal\LaravelAiAegis\Data\TransformResult;
 use MrPunyapal\LaravelAiAegis\Enums\PiiAction;
 
-final class PseudonymizationEngine implements PiiTransformerInterface
+final readonly class PseudonymizationEngine implements PiiTransformerInterface
 {
     public function __construct(
-        private readonly Repository $cache,
-        private readonly PiiTypeRegistryInterface $registry,
-        private readonly string $prefix = 'aegis_pii',
-        private readonly int $ttl = 3600,
+        private Repository $cache,
+        private PiiTypeRegistryInterface $registry,
+        private string $prefix = 'aegis_pii',
+        private int $ttl = 3600,
     ) {}
 
     /**

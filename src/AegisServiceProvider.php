@@ -10,10 +10,10 @@ use Illuminate\Routing\Router;
 use Livewire\Livewire;
 use MrPunyapal\LaravelAiAegis\Commands\InstallCommand;
 use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
-use MrPunyapal\LaravelAiAegis\Contracts\ApprovalHandlerInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeRegistryInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Defense\PromptInjectionDetector;
@@ -160,13 +160,11 @@ final class AegisServiceProvider extends PackageServiceProvider
 
     private function registerConfigResolver(): void
     {
-        $this->app->singleton(AegisConfigResolver::class, function (Application $app): AegisConfigResolver {
-            return new AegisConfigResolver(
-                parser: new PiiRuleParser(
-                    registry: $app->make(PiiTypeRegistryInterface::class),
-                ),
-            );
-        });
+        $this->app->singleton(AegisConfigResolver::class, fn (Application $app): AegisConfigResolver => new AegisConfigResolver(
+            parser: new PiiRuleParser(
+                registry: $app->make(PiiTypeRegistryInterface::class),
+            ),
+        ));
     }
 
     private function registerRecorder(): void
@@ -175,7 +173,7 @@ final class AegisServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * @return array<int, \MrPunyapal\LaravelAiAegis\Contracts\PiiTypeInterface>
+     * @return array<int, PiiTypeInterface>
      */
     private function builtInPiiTypes(): array
     {

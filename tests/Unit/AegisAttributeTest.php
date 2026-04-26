@@ -8,7 +8,7 @@ it('has sensible defaults', function (): void {
     $aegis = new Aegis;
 
     expect($aegis->piiEnabled)->toBeTrue()
-        ->and($aegis->piiRules)->toBe([])
+        ->and($aegis->piiRules)->toBeEmpty()
         ->and($aegis->blockInjections)->toBeTrue()
         ->and($aegis->strictMode)->toBeFalse()
         ->and($aegis->blockOutputPii)->toBeTrue()
@@ -69,4 +69,3 @@ it('is a readonly class', function (): void {
 
 #[Aegis(piiEnabled: false, blockInjections: true, strictMode: true)]
 class AegisAnnotatedStub {}
-

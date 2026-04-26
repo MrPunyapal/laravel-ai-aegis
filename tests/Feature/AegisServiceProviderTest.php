@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeRegistryInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
 use MrPunyapal\LaravelAiAegis\Defense\PromptInjectionDetector;
@@ -119,7 +120,7 @@ describe('config', function (): void {
 
 // --- Stubs ---
 
-class ServiceProviderTestPiiType implements \MrPunyapal\LaravelAiAegis\Contracts\PiiTypeInterface
+class ServiceProviderTestPiiType implements PiiTypeInterface
 {
     public function type(): string
     {
@@ -131,4 +132,3 @@ class ServiceProviderTestPiiType implements \MrPunyapal\LaravelAiAegis\Contracts
         return '/service_provider_test/';
     }
 }
-

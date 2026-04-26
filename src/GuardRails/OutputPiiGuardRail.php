@@ -8,9 +8,9 @@ use MrPunyapal\LaravelAiAegis\Contracts\GuardRailInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
 use MrPunyapal\LaravelAiAegis\Data\AegisConfig;
 use MrPunyapal\LaravelAiAegis\Data\GuardRailResult;
+use MrPunyapal\LaravelAiAegis\Data\PiiRuleConfig;
 use MrPunyapal\LaravelAiAegis\Enums\GuardRailStage;
 use MrPunyapal\LaravelAiAegis\Enums\PiiAction;
-use MrPunyapal\LaravelAiAegis\Data\PiiRuleConfig;
 
 final readonly class OutputPiiGuardRail implements GuardRailInterface
 {

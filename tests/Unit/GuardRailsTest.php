@@ -67,8 +67,7 @@ describe('ApprovalGuardRail', function (): void {
 
 describe('BlockedPhrasesGuardRail', function (): void {
     test('stage returns the configured stage', function (): void {
-        expect((new BlockedPhrasesGuardRail(GuardRailStage::Input))->stage())->toBe(GuardRailStage::Input);
-        expect((new BlockedPhrasesGuardRail(GuardRailStage::Output))->stage())->toBe(GuardRailStage::Output);
+        expect((new BlockedPhrasesGuardRail(GuardRailStage::Input))->stage())->toBe(GuardRailStage::Input)->and((new BlockedPhrasesGuardRail(GuardRailStage::Output))->stage())->toBe(GuardRailStage::Output);
     });
 
     test('passes when context is not AegisConfig', function (): void {
@@ -270,14 +269,14 @@ describe('OutputPiiGuardRail', function (): void {
 
     test('passes when piiRules is empty', function (): void {
         $result = (new OutputPiiGuardRail(new ZeroTokenTransformer))
-            ->check('content', new AegisConfig(blockOutputPii: true, piiRules: []));
+            ->check('content', new AegisConfig(piiRules: [], blockOutputPii: true));
 
         expect($result->passed)->toBeTrue();
     });
 
     test('fails when PII is detected in the output', function (): void {
         $rule = new PiiRuleConfig(type: 'email', action: PiiAction::Tokenize);
-        $config = new AegisConfig(blockOutputPii: true, piiRules: [$rule]);
+        $config = new AegisConfig(piiRules: [$rule], blockOutputPii: true);
 
         $result = (new OutputPiiGuardRail(new OneTokenTransformer))->check('user@example.com', $config);
 
@@ -287,7 +286,7 @@ describe('OutputPiiGuardRail', function (): void {
 
     test('passes when no PII is detected in the output', function (): void {
         $rule = new PiiRuleConfig(type: 'email', action: PiiAction::Tokenize);
-        $config = new AegisConfig(blockOutputPii: true, piiRules: [$rule]);
+        $config = new AegisConfig(piiRules: [$rule], blockOutputPii: true);
 
         $result = (new OutputPiiGuardRail(new ZeroTokenTransformer))->check('Hello there.', $config);
 
@@ -353,7 +352,7 @@ class AlwaysDenyHandler implements ApprovalHandlerInterface
 
 class FixedScoreDetector implements InjectionDetectorInterface
 {
-    public function __construct(private float $score) {}
+    public function __construct(private readonly float $score) {}
 
     public function evaluate(string $prompt): array
     {

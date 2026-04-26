@@ -36,7 +36,7 @@ final readonly class PiiRuleParser
      */
     public function parseAll(array $rules): array
     {
-        return array_values(array_map(fn (string|array $rule): PiiRuleConfig => $this->parse($rule), $rules));
+        return array_values(array_map($this->parse(...), $rules));
     }
 
     /**

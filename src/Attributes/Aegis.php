@@ -11,13 +11,12 @@ final readonly class Aegis
 {
     /**
      * @param  array<int, string|array<string, mixed>>  $piiRules
-     *      PII rules for this agent. Accepts string DSL or structured arrays.
-     *      Examples:
-     *        'email'                  → tokenize (default action)
-     *        'email:replace'          → replace with [REDACTED:EMAIL]
-     *        'email:mask,3,5'         → keep 3 chars at start and 5 at end
-     *        ['type'=>'email', 'action'=>'mask', 'mask_start'=>3, 'mask_end'=>5]
-     *
+     *                                                             PII rules for this agent. Accepts string DSL or structured arrays.
+     *                                                             Examples:
+     *                                                             'email'                  → tokenize (default action)
+     *                                                             'email:replace'          → replace with [REDACTED:EMAIL]
+     *                                                             'email:mask,3,5'         → keep 3 chars at start and 5 at end
+     *                                                             ['type'=>'email', 'action'=>'mask', 'mask_start'=>3, 'mask_end'=>5]
      * @param  array<int, string>  $inputBlockedPhrases  Phrases that block the input prompt.
      * @param  array<int, string>  $outputBlockedPhrases  Phrases that block the LLM response.
      * @param  array<int, string>  $allowedTools  Only these tools are permitted (empty = all allowed).
@@ -39,4 +38,3 @@ final readonly class Aegis
         public ?string $approvalHandler = null,
     ) {}
 }
-

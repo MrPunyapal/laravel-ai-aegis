@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MrPunyapal\LaravelAiAegis\Middleware;
 
 use Closure;
+use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
-use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
 use MrPunyapal\LaravelAiAegis\Support\AegisConfigResolver;
 
 final readonly class AegisMiddleware
@@ -68,4 +68,3 @@ final readonly class AegisMiddleware
         });
     }
 }
-

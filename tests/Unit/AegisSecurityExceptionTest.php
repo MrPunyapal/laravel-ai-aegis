@@ -104,4 +104,3 @@ describe('approvalDenied', function (): void {
             ->and($exception->getCode())->toBe(403);
     });
 });
-

@@ -67,4 +67,3 @@ describe('aegis:test', function (): void {
             ->assertSuccessful();
     });
 });
-

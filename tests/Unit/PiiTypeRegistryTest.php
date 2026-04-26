@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeInterface;
 use MrPunyapal\LaravelAiAegis\Pii\PiiTypeRegistry;
 use MrPunyapal\LaravelAiAegis\Pii\Types\EmailType;
 use MrPunyapal\LaravelAiAegis\Pii\Types\PhoneType;
@@ -9,7 +10,7 @@ use MrPunyapal\LaravelAiAegis\Pii\Types\PhoneType;
 test('get throws InvalidArgumentException for an unknown type', function (): void {
     $registry = new PiiTypeRegistry;
 
-    expect(fn () => $registry->get('unknown_type'))
+    expect(fn (): PiiTypeInterface => $registry->get('unknown_type'))
         ->toThrow(InvalidArgumentException::class, 'Unknown PII type: "unknown_type"');
 });
 

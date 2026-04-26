@@ -282,4 +282,3 @@ function createMiddlewarePending(string $responseContent): object
         }
     };
 }
-

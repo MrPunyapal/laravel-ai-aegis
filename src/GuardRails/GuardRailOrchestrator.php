@@ -24,30 +24,30 @@ final class GuardRailOrchestrator implements GuardRailOrchestratorInterface
 
     public function runInput(string $content, AegisConfig $config, mixed $context = null): void
     {
-        $this->run(GuardRailStage::Input, $content, $config, $context);
+        $this->run(GuardRailStage::Input, $content, $config);
     }
 
     public function runOutput(string $content, AegisConfig $config, mixed $context = null): void
     {
-        $this->run(GuardRailStage::Output, $content, $config, $context);
+        $this->run(GuardRailStage::Output, $content, $config);
     }
 
     public function runTool(string $content, AegisConfig $config, mixed $context = null): void
     {
-        $this->run(GuardRailStage::Tool, $content, $config, $context);
+        $this->run(GuardRailStage::Tool, $content, $config);
     }
 
     public function runSchema(string $content, AegisConfig $config, mixed $context = null): void
     {
-        $this->run(GuardRailStage::Schema, $content, $config, $context);
+        $this->run(GuardRailStage::Schema, $content, $config);
     }
 
     public function runApproval(string $content, AegisConfig $config, mixed $context = null): void
     {
-        $this->run(GuardRailStage::Approval, $content, $config, $context);
+        $this->run(GuardRailStage::Approval, $content, $config);
     }
 
-    private function run(GuardRailStage $stage, string $content, AegisConfig $config, mixed $context): void
+    private function run(GuardRailStage $stage, string $content, AegisConfig $config): void
     {
         foreach ($this->rails[$stage->value] ?? [] as $rail) {
             $result = $rail->check($content, $config);

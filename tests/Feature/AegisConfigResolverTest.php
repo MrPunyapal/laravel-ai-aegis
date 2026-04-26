@@ -13,9 +13,9 @@ beforeEach(function (): void {
 
 function createConfigResolverPrompt(string $agentClass): object
 {
-    return new class($agentClass)
+    return new readonly class($agentClass)
     {
-        public function __construct(private readonly string $agent) {}
+        public function __construct(private string $agent) {}
 
         public function agentClass(): string
         {

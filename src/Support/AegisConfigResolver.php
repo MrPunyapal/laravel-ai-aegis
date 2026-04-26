@@ -20,7 +20,7 @@ final readonly class AegisConfigResolver
     {
         $attribute = $this->resolveAttribute($prompt);
 
-        if ($attribute !== null) {
+        if ($attribute instanceof Aegis) {
             return $this->fromAttribute($attribute);
         }
 

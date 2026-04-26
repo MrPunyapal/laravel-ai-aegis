@@ -18,4 +18,3 @@ interface RecorderInterface
 
     public function recordApprovalEvent(bool $approved): void;
 }
-
