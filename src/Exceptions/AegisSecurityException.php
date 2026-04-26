@@ -23,4 +23,44 @@ final class AegisSecurityException extends RuntimeException
             code: 403,
         );
     }
+
+    public static function guardRailViolation(string $stage, string $reason): self
+    {
+        return new self(
+            message: "Aegis: Guard rail violation at stage [{$stage}]: {$reason}",
+            code: 403,
+        );
+    }
+
+    public static function toolDenied(string $tool): self
+    {
+        return new self(
+            message: "Aegis: Tool call denied: \"{$tool}\" is not permitted in this context.",
+            code: 403,
+        );
+    }
+
+    public static function approvalRequired(string $reason = 'Human approval required before proceeding.'): self
+    {
+        return new self(
+            message: "Aegis: {$reason}",
+            code: 403,
+        );
+    }
+
+    public static function approvalDenied(): self
+    {
+        return new self(
+            message: 'Aegis: Request denied by approval handler.',
+            code: 403,
+        );
+    }
+
+    public static function maxInputLengthExceeded(int $length, int $max): self
+    {
+        return new self(
+            message: "Aegis: Input exceeds maximum allowed length ({$length} > {$max}).",
+            code: 422,
+        );
+    }
 }
