@@ -397,20 +397,6 @@ php artisan aegis:test "Contact john@example.com for info."
 #   Tokens replaced    1
 ```
 
-## Migration from v1
-
-v2 is a **breaking redesign**. Key changes:
-
-| v1 | v2 |
-|---|---|
-| `pseudonymize: true` | `pii.enabled: true` |
-| `pii_types: ['email']` | `pii.rules: ['email:tokenize']` |
-| `block_injections: true` | `guard_rails.input.injection.enabled: true` |
-| `injection_threshold: 0.7` | `guard_rails.input.injection.threshold: 0.7` |
-| `#[Aegis(pseudonymize: true, piiTypes: ['email'])]` | `#[Aegis(piiEnabled: true, piiRules: ['email:tokenize'])]` |
-| `PiiDetectorInterface` | `PiiTransformerInterface` |
-| `pseudonymize() / depseudonymize()` | `transform() / restore()` |
-
 ## DevX Testing
 
 ```bash
