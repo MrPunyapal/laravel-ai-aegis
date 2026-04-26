@@ -7,14 +7,14 @@ namespace MrPunyapal\LaravelAiAegis\Middleware;
 use Closure;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
-use MrPunyapal\LaravelAiAegis\GuardRails\GuardRailOrchestrator;
+use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
 use MrPunyapal\LaravelAiAegis\Support\AegisConfigResolver;
 
 final readonly class AegisMiddleware
 {
     public function __construct(
         private PiiTransformerInterface $transformer,
-        private GuardRailOrchestrator $orchestrator,
+        private GuardRailOrchestratorInterface $orchestrator,
         private AegisConfigResolver $resolver,
         private RecorderInterface $recorder,
     ) {}

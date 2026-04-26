@@ -11,6 +11,7 @@ use Livewire\Livewire;
 use MrPunyapal\LaravelAiAegis\Commands\InstallCommand;
 use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
 use MrPunyapal\LaravelAiAegis\Contracts\ApprovalHandlerInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\PiiTypeRegistryInterface;
@@ -127,7 +128,7 @@ final class AegisServiceProvider extends PackageServiceProvider
 
     private function registerGuardRailOrchestrator(): void
     {
-        $this->app->singleton(GuardRailOrchestrator::class, function (Application $app): GuardRailOrchestrator {
+        $this->app->singleton(GuardRailOrchestratorInterface::class, function (Application $app): GuardRailOrchestrator {
             $orchestrator = new GuardRailOrchestrator;
 
             $injectionThreshold = (float) $app['config']->get('aegis.guard_rails.input.injection.threshold', 0.7);

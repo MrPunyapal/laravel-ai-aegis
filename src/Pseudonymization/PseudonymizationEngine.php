@@ -111,8 +111,8 @@ final class PseudonymizationEngine implements PiiTransformerInterface
             return str_repeat($rule->maskChar(), $length);
         }
 
-        $start = mb_substr($value, 0, $rule->maskStart);
-        $end = mb_substr($value, -$rule->maskEnd);
+        $start = $rule->maskStart > 0 ? mb_substr($value, 0, $rule->maskStart) : '';
+        $end = $rule->maskEnd > 0 ? mb_substr($value, -$rule->maskEnd) : '';
         $masked = str_repeat($rule->maskChar(), $length - $keep);
 
         return $start.$masked.$end;

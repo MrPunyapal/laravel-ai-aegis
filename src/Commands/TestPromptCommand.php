@@ -6,7 +6,8 @@ namespace MrPunyapal\LaravelAiAegis\Commands;
 
 use Illuminate\Console\Command;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
-use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
+use MrPunyapal\LaravelAiAegis\Pii\PiiRuleParser;
 
 final class TestPromptCommand extends Command
 {
@@ -16,7 +17,8 @@ final class TestPromptCommand extends Command
 
     public function __construct(
         private readonly InjectionDetectorInterface $injectionDetector,
-        private readonly PiiDetectorInterface $piiDetector,
+        private readonly PiiTransformerInterface $transformer,
+        private readonly PiiRuleParser $parser,
     ) {
         parent::__construct();
     }
@@ -56,20 +58,38 @@ final class TestPromptCommand extends Command
 
     private function runPiiCheck(string $prompt): void
     {
-        /** @var array<int, string> $piiTypes */
-        $piiTypes = (array) config('aegis.pii_types', ['email', 'phone', 'ssn', 'credit_card', 'ip_address']);
+        /** @var array<int, string|array<string, mixed>> $rawRules */
+        $rawRules = (array) config('aegis.pii.rules', []);
 
-        $result = $this->piiDetector->pseudonymize($prompt, $piiTypes);
+        $rules = $this->parser->parseAll($rawRules);
 
-        $hasPii = $result['text'] !== $prompt;
+        if ($rules === []) {
+            $this->components->twoColumnDetail('<fg=white>PII detection</>', '<fg=gray>no rules configured</>');
+            $this->newLine();
+
+            return;
+        }
+
+        $result = $this->transformer->transform($prompt, $rules);
+
+        $hasPii = $result->tokenCount > 0;
         $statusLabel = $hasPii
             ? '<fg=yellow;options=bold>PII DETECTED</>'
             : '<fg=green;options=bold>CLEAN</>';
 
         $this->components->twoColumnDetail('<fg=white>PII detection</>', $statusLabel);
 
+        foreach ($rules as $rule) {
+            $this->components->twoColumnDetail(
+                '  Rule <fg=cyan>'.$rule->type.'</> ('.$rule->action->value.')',
+                '',
+            );
+        }
+
         if ($hasPii) {
-            $this->components->twoColumnDetail('  Redacted text', $result['text']);
+            $this->newLine();
+            $this->components->twoColumnDetail('  Transformed text', $result->text);
+            $this->components->twoColumnDetail('  Tokens replaced', (string) $result->tokenCount);
         }
 
         $this->newLine();

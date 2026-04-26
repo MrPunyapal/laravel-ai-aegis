@@ -16,6 +16,18 @@ describe('aegis:install', function (): void {
             ->expectsOutputToContain('Aegis installed successfully')
             ->assertSuccessful();
     });
+
+    test('mentions pii.rules config key', function (): void {
+        $this->artisan(InstallCommand::class)
+            ->expectsOutputToContain('pii.rules')
+            ->assertSuccessful();
+    });
+
+    test('mentions Aegis attribute', function (): void {
+        $this->artisan(InstallCommand::class)
+            ->expectsOutputToContain('#[Aegis]')
+            ->assertSuccessful();
+    });
 });
 
 describe('aegis:test', function (): void {
@@ -32,14 +44,27 @@ describe('aegis:test', function (): void {
     });
 
     test('detects PII in prompt', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+
         $this->artisan(TestPromptCommand::class, ['prompt' => 'Contact john@example.com for info.'])
             ->expectsOutputToContain('PII DETECTED')
             ->assertSuccessful();
     });
 
     test('shows clean for prompt with no PII', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+
         $this->artisan(TestPromptCommand::class, ['prompt' => 'Tell me about the weather.'])
             ->expectsOutputToContain('CLEAN')
             ->assertSuccessful();
     });
+
+    test('shows no rules configured when rules is empty', function (): void {
+        config(['aegis.pii.rules' => []]);
+
+        $this->artisan(TestPromptCommand::class, ['prompt' => 'Hello world.'])
+            ->expectsOutputToContain('no rules configured')
+            ->assertSuccessful();
+    });
 });
+

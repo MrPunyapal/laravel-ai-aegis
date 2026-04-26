@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace MrPunyapal\LaravelAiAegis\GuardRails;
 
 use MrPunyapal\LaravelAiAegis\Contracts\GuardRailInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
 use MrPunyapal\LaravelAiAegis\Data\AegisConfig;
 use MrPunyapal\LaravelAiAegis\Enums\GuardRailStage;
 use MrPunyapal\LaravelAiAegis\Exceptions\AegisSecurityException;
 
-final class GuardRailOrchestrator
+final class GuardRailOrchestrator implements GuardRailOrchestratorInterface
 {
     /**
      * @var array<string, array<int, GuardRailInterface>>

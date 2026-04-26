@@ -49,3 +49,59 @@ test('extends RuntimeException', function (): void {
 
     expect($exception)->toBeInstanceOf(RuntimeException::class);
 });
+
+describe('guardRailViolation', function (): void {
+    test('creates exception with stage and reason', function (): void {
+        $exception = AegisSecurityException::guardRailViolation('input', 'Blocked phrase detected');
+
+        expect($exception)
+            ->toBeInstanceOf(AegisSecurityException::class)
+            ->and($exception->getCode())->toBe(403)
+            ->and($exception->getMessage())->toContain('input')
+            ->and($exception->getMessage())->toContain('Blocked phrase detected');
+    });
+});
+
+describe('toolDenied', function (): void {
+    test('creates exception with tool name', function (): void {
+        $exception = AegisSecurityException::toolDenied('dangerous_tool');
+
+        expect($exception)
+            ->toBeInstanceOf(AegisSecurityException::class)
+            ->and($exception->getCode())->toBe(403)
+            ->and($exception->getMessage())->toContain('dangerous_tool');
+    });
+});
+
+describe('maxInputLengthExceeded', function (): void {
+    test('creates exception with 422 code', function (): void {
+        $exception = AegisSecurityException::maxInputLengthExceeded(1500, 1000);
+
+        expect($exception)
+            ->toBeInstanceOf(AegisSecurityException::class)
+            ->and($exception->getCode())->toBe(422)
+            ->and($exception->getMessage())->toContain('1500')
+            ->and($exception->getMessage())->toContain('1000');
+    });
+});
+
+describe('approvalRequired', function (): void {
+    test('creates exception with 403 code', function (): void {
+        $exception = AegisSecurityException::approvalRequired('some content');
+
+        expect($exception)
+            ->toBeInstanceOf(AegisSecurityException::class)
+            ->and($exception->getCode())->toBe(403);
+    });
+});
+
+describe('approvalDenied', function (): void {
+    test('creates exception with 403 code', function (): void {
+        $exception = AegisSecurityException::approvalDenied();
+
+        expect($exception)
+            ->toBeInstanceOf(AegisSecurityException::class)
+            ->and($exception->getCode())->toBe(403);
+    });
+});
+

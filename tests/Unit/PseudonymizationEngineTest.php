@@ -4,120 +4,179 @@ declare(strict_types=1);
 
 use Illuminate\Cache\ArrayStore;
 use Illuminate\Cache\Repository;
+use MrPunyapal\LaravelAiAegis\Data\PiiRuleConfig;
+use MrPunyapal\LaravelAiAegis\Enums\PiiAction;
+use MrPunyapal\LaravelAiAegis\Pii\PiiRuleParser;
+use MrPunyapal\LaravelAiAegis\Pii\PiiTypeRegistry;
+use MrPunyapal\LaravelAiAegis\Pii\Types\CreditCardType;
+use MrPunyapal\LaravelAiAegis\Pii\Types\EmailType;
+use MrPunyapal\LaravelAiAegis\Pii\Types\IpAddressType;
+use MrPunyapal\LaravelAiAegis\Pii\Types\PhoneType;
+use MrPunyapal\LaravelAiAegis\Pii\Types\SsnType;
 use MrPunyapal\LaravelAiAegis\Pseudonymization\PseudonymizationEngine;
 
 beforeEach(function (): void {
     $this->cache = new Repository(new ArrayStore);
+
+    $this->registry = new PiiTypeRegistry;
+    $this->registry->register(new EmailType);
+    $this->registry->register(new PhoneType);
+    $this->registry->register(new SsnType);
+    $this->registry->register(new CreditCardType);
+    $this->registry->register(new IpAddressType);
+
     $this->engine = new PseudonymizationEngine(
         cache: $this->cache,
+        registry: $this->registry,
         prefix: 'test_aegis',
         ttl: 3600,
     );
+
+    $this->parser = new PiiRuleParser($this->registry);
 });
 
-it('replaces email addresses with tokens', function (): void {
-    $result = $this->engine->pseudonymize(
-        'Contact john@example.com for details.',
-        ['email'],
-    );
+// --- Tokenize action ---
 
-    expect($result['text'])
-        ->not->toContain('john@example.com')
-        ->toContain('{{AEGIS_EMAIL_');
-});
-
-it('replaces phone numbers with tokens', function (): void {
-    $result = $this->engine->pseudonymize(
-        'Call me at 555-123-4567.',
-        ['phone'],
-    );
-
-    expect($result['text'])
-        ->not->toContain('555-123-4567')
-        ->toContain('{{AEGIS_PHONE_');
-});
-
-it('replaces SSN with tokens', function (): void {
-    $result = $this->engine->pseudonymize(
-        'My SSN is 123-45-6789.',
-        ['ssn'],
-    );
-
-    expect($result['text'])
-        ->not->toContain('123-45-6789')
-        ->toContain('{{AEGIS_SSN_');
-});
-
-it('replaces credit card numbers with tokens', function (): void {
-    $result = $this->engine->pseudonymize(
-        'Card: 4111-1111-1111-1111.',
-        ['credit_card'],
-    );
-
-    expect($result['text'])
-        ->not->toContain('4111-1111-1111-1111')
-        ->toContain('{{AEGIS_CREDIT_CARD_');
-});
-
-it('replaces IP addresses with tokens', function (): void {
-    $result = $this->engine->pseudonymize(
-        'Server IP: 192.168.1.100.',
-        ['ip_address'],
-    );
-
-    expect($result['text'])
-        ->not->toContain('192.168.1.100')
-        ->toContain('{{AEGIS_IP_ADDRESS_');
-});
-
-it('restores tokens back to original values', function (): void {
+it('tokenizes email addresses and restores them', function (): void {
+    $rules = $this->parser->parseAll(['email:tokenize']);
     $original = 'Contact john@example.com for details.';
-    $result = $this->engine->pseudonymize($original, ['email']);
 
-    $restored = $this->engine->depseudonymize($result['text'], $result['session_id']);
+    $result = $this->engine->transform($original, $rules);
+
+    expect($result->tokenCount)->toBe(1)
+        ->and($result->text)->not->toContain('john@example.com');
+
+    $restored = $this->engine->restore($result->text, $result->sessionId);
 
     expect($restored)->toBe($original);
 });
 
-it('handles text with no PII', function (): void {
-    $text = 'This is a normal sentence with no PII.';
-    $result = $this->engine->pseudonymize($text);
+it('tokenizes phone numbers', function (): void {
+    $rules = $this->parser->parseAll(['phone:tokenize']);
 
-    expect($result['text'])->toBe($text);
+    $result = $this->engine->transform('Call me at 555-123-4567.', $rules);
+
+    expect($result->tokenCount)->toBe(1)
+        ->and($result->text)->not->toContain('555-123-4567');
 });
 
-it('handles multiple PII types in one text', function (): void {
-    $text = 'Email: user@test.com, Phone: 555-888-9999, SSN: 111-22-3333.';
-    $result = $this->engine->pseudonymize($text, ['email', 'phone', 'ssn']);
+it('tokenizes SSN', function (): void {
+    $rules = $this->parser->parseAll(['ssn:tokenize']);
 
-    expect($result['text'])
-        ->not->toContain('user@test.com')
-        ->not->toContain('555-888-9999')
-        ->not->toContain('111-22-3333');
+    $result = $this->engine->transform('My SSN is 123-45-6789.', $rules);
 
-    $restored = $this->engine->depseudonymize($result['text'], $result['session_id']);
-
-    expect($restored)->toBe($text);
+    expect($result->tokenCount)->toBe(1)
+        ->and($result->text)->not->toContain('123-45-6789');
 });
 
-it('returns original text when session not found', function (): void {
-    $text = 'Text with {{AEGIS_EMAIL_ABC12}} token.';
+it('tokenizes credit card numbers', function (): void {
+    $rules = $this->parser->parseAll(['credit_card:tokenize']);
 
-    $restored = $this->engine->depseudonymize($text, 'nonexistent-session');
+    $result = $this->engine->transform('Card: 4111-1111-1111-1111.', $rules);
 
-    expect($restored)->toBe($text);
+    expect($result->tokenCount)->toBe(1)
+        ->and($result->text)->not->toContain('4111-1111-1111-1111');
 });
 
-it('ignores unknown PII types', function (): void {
-    $text = 'Contact john@example.com.';
-    $result = $this->engine->pseudonymize($text, ['unknown_type']);
+it('tokenizes IP addresses', function (): void {
+    $rules = $this->parser->parseAll(['ip_address:tokenize']);
 
-    expect($result['text'])->toBe($text);
+    $result = $this->engine->transform('Server IP: 192.168.1.100.', $rules);
+
+    expect($result->tokenCount)->toBe(1)
+        ->and($result->text)->not->toContain('192.168.1.100');
 });
 
-it('generates unique session IDs for each pseudonymization', function (): void {
-    $result1 = $this->engine->pseudonymize('john@example.com', ['email']);
-    $result2 = $this->engine->pseudonymize('jane@example.com', ['email']);
+// --- Replace action ---
 
-    expect($result1['session_id'])->not->toBe($result2['session_id']);
+it('replaces email with default placeholder', function (): void {
+    $rules = $this->parser->parseAll(['email:replace']);
+
+    $result = $this->engine->transform('Contact john@example.com.', $rules);
+
+    expect($result->text)->toContain('[REDACTED:EMAIL]')
+        ->and($result->tokenCount)->toBe(1);
+});
+
+it('replaces email with custom placeholder', function (): void {
+    $rules = $this->parser->parseAll(['email:replace,***EMAIL***']);
+
+    $result = $this->engine->transform('Contact john@example.com.', $rules);
+
+    expect($result->text)->toContain('***EMAIL***')
+        ->and($result->text)->not->toContain('john@example.com');
+});
+
+// --- Mask action ---
+
+it('masks email fully when no start/end provided', function (): void {
+    $rules = $this->parser->parseAll(['email:mask']);
+
+    $result = $this->engine->transform('Contact john@example.com.', $rules);
+
+    expect($result->text)->not->toContain('john@example.com')
+        ->and($result->tokenCount)->toBe(1);
+});
+
+it('masks email keeping start chars', function (): void {
+    $rule = new PiiRuleConfig(
+        type: 'email',
+        action: PiiAction::Mask,
+        maskStart: 4,
+        maskEnd: 0,
+    );
+
+    $result = $this->engine->transform('Contact john@example.com.', [$rule]);
+
+    expect($result->text)->toContain('john')
+        ->and($result->text)->not->toContain('@example.com');
+});
+
+it('masks email keeping start and end chars', function (): void {
+    $rule = new PiiRuleConfig(
+        type: 'email',
+        action: PiiAction::Mask,
+        maskStart: 3,
+        maskEnd: 4,
+    );
+
+    $email = 'john@example.com';
+    $result = $this->engine->transform("Contact {$email}.", [$rule]);
+
+    // First 3: 'joh', last 4: '.com'
+    expect($result->text)->toContain('joh')
+        ->and($result->text)->toContain('.com')
+        ->and($result->text)->toContain('*');
+});
+
+it('falls back to full mask when maskStart + maskEnd >= value length', function (): void {
+    $rule = new PiiRuleConfig(
+        type: 'email',
+        action: PiiAction::Mask,
+        maskStart: 20,
+        maskEnd: 20,
+    );
+
+    $result = $this->engine->transform('a@b.com.', [$rule]);
+
+    // Should not leak any part of 'a@b.com'
+    expect($result->text)->not->toContain('a@b.com')
+        ->and($result->text)->toContain('*');
+});
+
+// --- Restore ---
+
+it('returns text unchanged when sessionId has no cached tokenMap', function (): void {
+    $restored = $this->engine->restore('some text', 'nonexistent-session');
+
+    expect($restored)->toBe('some text');
+});
+
+it('handles zero token count when text has no matching PII', function (): void {
+    $rules = $this->parser->parseAll(['email:tokenize']);
+
+    $result = $this->engine->transform('Hello, no email here.', $rules);
+
+    expect($result->tokenCount)->toBe(0)
+        ->and($result->text)->toBe('Hello, no email here.');
 });
