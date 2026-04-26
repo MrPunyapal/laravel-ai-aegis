@@ -460,7 +460,7 @@ A native, **local-first** security middleware for the **Laravel AI SDK**. Aegis 
 
 | Dependency | Version |
 |---|---|
-| PHP | `^8.2` |
+| PHP | `^8.3` |
 | Laravel | `^12.0 \| ^13.0` |
 | Laravel Pulse *(optional)* | `^1.0` |
 
