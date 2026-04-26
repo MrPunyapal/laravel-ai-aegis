@@ -200,10 +200,28 @@ it('falls back to config when agentClass does not exist', function (): void {
     expect($result->content())->toBe('OK');
 });
 
+it('calls runApproval when requireApproval is enabled', function (): void {
+    config(['aegis.pii.rules' => []]);
+
+    $this->orchestrator->shouldReceive('runApproval')->once();
+
+    $prompt = createMiddlewarePrompt('Hello', MiddlewareAgentRequiresApproval::class);
+
+    $result = $this->middleware->handle(
+        $prompt,
+        fn ($p): object => createMiddlewarePending('OK'),
+    );
+
+    expect($result->content())->toBe('OK');
+});
+
 // --- Stubs ---
 
 #[Aegis(piiEnabled: false, blockInjections: false)]
 class MiddlewareAgentNoRules {}
+
+#[Aegis(piiEnabled: false, blockInjections: false, requireApproval: true)]
+class MiddlewareAgentRequiresApproval {}
 
 function createMiddlewarePrompt(string $content, ?string $agentClass = null): object
 {

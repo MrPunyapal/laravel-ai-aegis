@@ -94,6 +94,14 @@ describe('container bindings', function (): void {
 
         expect($a)->toBe($b);
     });
+    test('registers custom PII type from aegis.pii.custom_detectors', function (): void {
+        config(['aegis.pii.custom_detectors' => [ServiceProviderTestPiiType::class]]);
+
+        /** @var PiiTypeRegistryInterface $registry */
+        $registry = app(PiiTypeRegistryInterface::class);
+
+        expect($registry->has('service_provider_test'))->toBeTrue();
+    });
 });
 
 describe('config', function (): void {
@@ -108,4 +116,19 @@ describe('config', function (): void {
         expect(config('aegis.cache.store'))->toBe('array');
     });
 });
+
+// --- Stubs ---
+
+class ServiceProviderTestPiiType implements \MrPunyapal\LaravelAiAegis\Contracts\PiiTypeInterface
+{
+    public function type(): string
+    {
+        return 'service_provider_test';
+    }
+
+    public function pattern(): string
+    {
+        return '/service_provider_test/';
+    }
+}
 

@@ -115,3 +115,89 @@ describe('recordComputeSaved', function (): void {
         $this->recorder->recordComputeSaved(0.03);
     });
 });
+
+describe('recordGuardRailViolation', function (): void {
+    test('records to Pulse when enabled', function (): void {
+        Config::set('aegis.pulse.enabled', true);
+
+        $entry = Mockery::mock(Entry::class);
+        $entry->shouldReceive('count')->once();
+
+        Pulse::shouldReceive('record')
+            ->once()
+            ->with('aegis_guard_rail_violation', 'input', 1)
+            ->andReturn($entry);
+
+        $this->recorder->recordGuardRailViolation('input');
+    });
+
+    test('does nothing when pulse is disabled', function (): void {
+        Config::set('aegis.pulse.enabled', false);
+
+        Pulse::shouldReceive('record')->never();
+
+        $this->recorder->recordGuardRailViolation('input');
+    });
+});
+
+describe('recordToolDenied', function (): void {
+    test('records to Pulse when enabled', function (): void {
+        Config::set('aegis.pulse.enabled', true);
+
+        $entry = Mockery::mock(Entry::class);
+        $entry->shouldReceive('count')->once();
+
+        Pulse::shouldReceive('record')
+            ->once()
+            ->with('aegis_tool_denied', 'tool', 1)
+            ->andReturn($entry);
+
+        $this->recorder->recordToolDenied();
+    });
+
+    test('does nothing when pulse is disabled', function (): void {
+        Config::set('aegis.pulse.enabled', false);
+
+        Pulse::shouldReceive('record')->never();
+
+        $this->recorder->recordToolDenied();
+    });
+});
+
+describe('recordApprovalEvent', function (): void {
+    test('records approved event to Pulse when enabled', function (): void {
+        Config::set('aegis.pulse.enabled', true);
+
+        $entry = Mockery::mock(Entry::class);
+        $entry->shouldReceive('count')->once();
+
+        Pulse::shouldReceive('record')
+            ->once()
+            ->with('aegis_approval', 'approved', 1)
+            ->andReturn($entry);
+
+        $this->recorder->recordApprovalEvent(true);
+    });
+
+    test('records denied event to Pulse when enabled', function (): void {
+        Config::set('aegis.pulse.enabled', true);
+
+        $entry = Mockery::mock(Entry::class);
+        $entry->shouldReceive('count')->once();
+
+        Pulse::shouldReceive('record')
+            ->once()
+            ->with('aegis_approval', 'denied', 1)
+            ->andReturn($entry);
+
+        $this->recorder->recordApprovalEvent(false);
+    });
+
+    test('does nothing when pulse is disabled', function (): void {
+        Config::set('aegis.pulse.enabled', false);
+
+        Pulse::shouldReceive('record')->never();
+
+        $this->recorder->recordApprovalEvent(true);
+    });
+});

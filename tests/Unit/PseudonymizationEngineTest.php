@@ -180,3 +180,12 @@ it('handles zero token count when text has no matching PII', function (): void {
     expect($result->tokenCount)->toBe(0)
         ->and($result->text)->toBe('Hello, no email here.');
 });
+
+it('skips rules for PII types not in the registry', function (): void {
+    $rule = new PiiRuleConfig(type: 'unregistered_type', action: PiiAction::Tokenize);
+
+    $result = $this->engine->transform('Some text here.', [$rule]);
+
+    expect($result->tokenCount)->toBe(0)
+        ->and($result->text)->toBe('Some text here.');
+});
