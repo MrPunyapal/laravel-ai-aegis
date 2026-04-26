@@ -11,4 +11,11 @@ interface RecorderInterface
     public function recordPseudonymization(int $tokenCount = 1): void;
 
     public function recordComputeSaved(float $estimatedCost): void;
+
+    public function recordGuardRailViolation(string $stage): void;
+
+    public function recordToolDenied(): void;
+
+    public function recordApprovalEvent(bool $approved): void;
 }
+

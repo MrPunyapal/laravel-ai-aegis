@@ -37,6 +37,33 @@ final class AegisRecorder implements RecorderInterface
         Pulse::record('aegis_compute_saved', 'cost', (int) round($estimatedCost * 100))->sum();
     }
 
+    public function recordGuardRailViolation(string $stage): void
+    {
+        if (! $this->pulseAvailable()) {
+            return;
+        }
+
+        Pulse::record('aegis_guard_rail_violation', $stage, 1)->count();
+    }
+
+    public function recordToolDenied(): void
+    {
+        if (! $this->pulseAvailable()) {
+            return;
+        }
+
+        Pulse::record('aegis_tool_denied', 'tool', 1)->count();
+    }
+
+    public function recordApprovalEvent(bool $approved): void
+    {
+        if (! $this->pulseAvailable()) {
+            return;
+        }
+
+        Pulse::record('aegis_approval', $approved ? 'approved' : 'denied', 1)->count();
+    }
+
     private function pulseAvailable(): bool
     {
         return (bool) Config::get('aegis.pulse.enabled', true)

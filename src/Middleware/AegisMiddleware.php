@@ -5,111 +5,67 @@ declare(strict_types=1);
 namespace MrPunyapal\LaravelAiAegis\Middleware;
 
 use Closure;
-use MrPunyapal\LaravelAiAegis\Attributes\Aegis;
-use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
-use MrPunyapal\LaravelAiAegis\Contracts\PiiDetectorInterface;
+use MrPunyapal\LaravelAiAegis\Contracts\PiiTransformerInterface;
 use MrPunyapal\LaravelAiAegis\Contracts\RecorderInterface;
-use MrPunyapal\LaravelAiAegis\Exceptions\AegisSecurityException;
-use ReflectionClass;
+use MrPunyapal\LaravelAiAegis\GuardRails\GuardRailOrchestrator;
+use MrPunyapal\LaravelAiAegis\Support\AegisConfigResolver;
 
 final readonly class AegisMiddleware
 {
     public function __construct(
-        private PiiDetectorInterface $piiDetector,
-        private InjectionDetectorInterface $injectionDetector,
+        private PiiTransformerInterface $transformer,
+        private GuardRailOrchestrator $orchestrator,
+        private AegisConfigResolver $resolver,
         private RecorderInterface $recorder,
     ) {}
 
     /**
      * Handle the agent prompt through the Aegis security pipeline.
      *
-     * Intercepts the AgentPrompt before it reaches the LLM provider,
-     * then uses the ->then() closure to process the AgentResponse.
-     *
      * @param  Closure(object): object  $next
      */
     public function handle(object $prompt, Closure $next): mixed
     {
-        $config = $this->resolveConfiguration($prompt);
-
-        if (! $config->blockInjections && ! $config->pseudonymize) {
-            return $next($prompt)->then(fn (object $response): object => $response);
-        }
+        $config = $this->resolver->resolve($prompt);
 
         $content = $prompt->content();
 
-        // Phase 1: Localized Prompt Injection Defense
-        if ($config->blockInjections) {
-            $this->detectInjection($content, $config->strictMode);
+        // Stage 1 — Input guard rails (injection, max-length, blocked phrases)
+        $this->orchestrator->runInput($content, $config, $config);
+
+        // Stage 2 — Approval guard rail
+        if ($config->requireApproval) {
+            $this->orchestrator->runApproval($content, $config, $config);
         }
 
-        // Phase 2: Bidirectional Pseudonymization (outbound)
+        // Stage 3 — Outbound PII transformation
         $sessionId = null;
 
-        if ($config->pseudonymize) {
-            $result = $this->piiDetector->pseudonymize($content, $config->piiTypes);
-            $sessionId = $result['session_id'];
-            $prompt = $prompt->withContent($result['text']);
-            $this->recorder->recordPseudonymization();
-        }
+        if ($config->piiEnabled && $config->piiRules !== []) {
+            $result = $this->transformer->transform($content, $config->piiRules);
+            $sessionId = $result->sessionId;
 
-        // Phase 3: Forward to next middleware / LLM provider
-        return $next($prompt)->then(function (object $response) use ($sessionId): object {
-            // Phase 4: Reverse Pseudonymization (inbound)
-            if ($sessionId !== null) {
-                $restoredContent = $this->piiDetector->depseudonymize(
-                    $response->content(),
-                    $sessionId,
-                );
-
-                return $response->withContent($restoredContent);
+            if ($result->tokenCount > 0) {
+                $this->recorder->recordPseudonymization($result->tokenCount);
             }
 
-            return $response;
+            $prompt = $prompt->withContent($result->text);
+        }
+
+        // Stage 4 — Forward to next middleware / LLM provider
+        return $next($prompt)->then(function (object $response) use ($config, $sessionId): object {
+            $responseContent = $response->content();
+
+            // Stage 5 — Output guard rails (PII leakage, blocked phrases)
+            $this->orchestrator->runOutput($responseContent, $config, $config);
+
+            // Stage 6 — Inbound PII restore (tokenize only; replace/mask are irreversible)
+            if ($sessionId !== null) {
+                $responseContent = $this->transformer->restore($responseContent, $sessionId);
+            }
+
+            return $response->withContent($responseContent);
         });
     }
-
-    /**
-     * Evaluate prompt against injection attack vectors and block if threshold exceeded.
-     */
-    private function detectInjection(string $content, bool $strictMode): void
-    {
-        $result = $this->injectionDetector->evaluate($content);
-        $threshold = $strictMode
-            ? 0.3
-            : (float) config('aegis.injection_threshold', 0.7);
-
-        if ($result['score'] >= $threshold) {
-            $this->recorder->recordBlockedInjection($result['score']);
-            $this->recorder->recordComputeSaved(0.03);
-
-            throw AegisSecurityException::promptInjectionDetected($result['score']);
-        }
-    }
-
-    /**
-     * Resolve Aegis configuration from the agent class attribute or fallback to config.
-     */
-    private function resolveConfiguration(object $prompt): Aegis
-    {
-        $agentClass = method_exists($prompt, 'agentClass')
-            ? $prompt->agentClass()
-            : null;
-
-        if ($agentClass !== null && class_exists($agentClass)) {
-            $reflection = new ReflectionClass($agentClass);
-            $attributes = $reflection->getAttributes(Aegis::class);
-
-            if ($attributes !== []) {
-                return $attributes[0]->newInstance();
-            }
-        }
-
-        return new Aegis(
-            blockInjections: (bool) config('aegis.block_injections', true),
-            pseudonymize: (bool) config('aegis.pseudonymize', true),
-            strictMode: (bool) config('aegis.strict_mode', false),
-            piiTypes: (array) config('aegis.pii_types', ['email', 'phone', 'ssn', 'credit_card', 'ip_address']),
-        );
-    }
 }
+
