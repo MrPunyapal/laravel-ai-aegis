@@ -5,6 +5,42 @@ declare(strict_types=1);
 use MrPunyapal\LaravelAiAegis\Commands\InstallCommand;
 use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
 
+describe('aegis:doctor', function (): void {
+    test('shows the doctor report for the current config', function (): void {
+        $this->artisan('aegis:doctor')
+            ->expectsOutputToContain('Aegis doctor report')
+            ->expectsOutputToContain('PII rules')
+            ->expectsOutputToContain('WARN')
+            ->assertSuccessful();
+    });
+
+    test('outputs the doctor report as json', function (): void {
+        $this->artisan('aegis:doctor', ['--json' => true])
+            ->expectsOutputToContain('summary')
+            ->assertSuccessful();
+    });
+
+    test('fails when doctor detects invalid config', function (): void {
+        config(['aegis.guard_rails.approval.enabled' => true]);
+        config(['aegis.guard_rails.approval.handler' => null]);
+
+        $this->artisan('aegis:doctor')
+            ->expectsOutputToContain('FAIL')
+            ->assertExitCode(1);
+    });
+
+    test('reports ready when doctor finds no warnings or failures', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+        config(['aegis.cache.store' => 'redis']);
+        config(['aegis.pulse.enabled' => false]);
+
+        $this->artisan('aegis:doctor')
+            ->expectsOutputToContain('PASS')
+            ->expectsOutputToContain('Aegis is ready.')
+            ->assertSuccessful();
+    });
+});
+
 describe('aegis:install', function (): void {
     test('publishes config file', function (): void {
         $this->artisan(InstallCommand::class, ['--no-interaction' => true])

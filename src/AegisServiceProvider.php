@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace MrPunyapal\LaravelAiAegis;
 
+use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Router;
 use Livewire\Livewire;
+use MrPunyapal\LaravelAiAegis\Commands\DoctorCommand;
 use MrPunyapal\LaravelAiAegis\Commands\InstallCommand;
 use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
 use MrPunyapal\LaravelAiAegis\Contracts\GuardRailOrchestratorInterface;
@@ -56,6 +58,7 @@ final class AegisServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasCommands([
+                DoctorCommand::class,
                 InstallCommand::class,
                 TestPromptCommand::class,
             ]);
@@ -112,8 +115,11 @@ final class AegisServiceProvider extends PackageServiceProvider
             /** @var array{store: string, prefix: string, ttl: int} $config */
             $config = $app['config']['aegis.cache'];
 
+            /** @var Repository $cache */
+            $cache = $app->make(CacheFactory::class)->store($config['store']);
+
             return new PseudonymizationEngine(
-                cache: $app->make(Repository::class),
+                cache: $cache,
                 registry: $app->make(PiiTypeRegistryInterface::class),
                 prefix: $config['prefix'],
                 ttl: $config['ttl'],
