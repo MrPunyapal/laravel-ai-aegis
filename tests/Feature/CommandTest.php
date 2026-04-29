@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use MrPunyapal\LaravelAiAegis\Attributes\Aegis;
 use MrPunyapal\LaravelAiAegis\Commands\InstallCommand;
 use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
 
@@ -142,4 +143,170 @@ describe('aegis:test', function (): void {
             ->expectsOutputToContain('no rules configured')
             ->assertSuccessful();
     });
+
+    test('supports output-stage diagnostics with a response payload', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+
+        $this->artisan(TestPromptCommand::class, [
+            '--stage' => 'output',
+            '--response' => 'Reply to john@example.com.',
+        ])
+            ->expectsOutputToContain('Output PII detection')
+            ->expectsOutputToContain('Tokens replaced')
+            ->assertSuccessful();
+    });
+
+    test('treats an empty stage option as full diagnostics', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'What is the weather today?',
+            '--stage' => '',
+        ])
+            ->expectsOutputToContain('Analysing stage: full')
+            ->assertSuccessful();
+    });
+
+    test('fails when input stage is requested without a prompt', function (): void {
+        $this->artisan(TestPromptCommand::class, ['--stage' => 'input'])
+            ->expectsOutputToContain('A prompt is required')
+            ->assertExitCode(1);
+    });
+
+    test('skips output diagnostics when no response is provided in full mode', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+
+        $this->artisan(TestPromptCommand::class, ['prompt' => 'Hello world.'])
+            ->expectsOutputToContain('Output PII detection')
+            ->expectsOutputToContain('skipped')
+            ->assertSuccessful();
+    });
+
+    test('shows input pii diagnostics as disabled when the agent disables pii', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'Contact john@example.com for info.',
+            '--agent' => CommandTestAgentWithPiiDisabled::class,
+        ])
+            ->expectsOutputToContain('PII detection')
+            ->expectsOutputToContain('disabled')
+            ->assertSuccessful();
+    });
+
+    test('shows output pii diagnostics as disabled when the agent disables output scanning', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            '--stage' => 'output',
+            '--response' => 'Reply to john@example.com.',
+            '--agent' => CommandTestAgentWithAegis::class,
+        ])
+            ->expectsOutputToContain('Output PII detection')
+            ->assertSuccessful();
+    });
+
+    test('shows no output pii rules when none are configured', function (): void {
+        config(['aegis.pii.rules' => []]);
+
+        $this->artisan(TestPromptCommand::class, [
+            '--stage' => 'output',
+            '--response' => 'Reply to john@example.com.',
+        ])
+            ->expectsOutputToContain('Output PII detection')
+            ->assertSuccessful();
+    });
+
+    test('shows clean output diagnostics when no pii is detected', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+
+        $this->artisan(TestPromptCommand::class, [
+            '--stage' => 'output',
+            '--response' => 'Nothing sensitive here.',
+        ])
+            ->expectsOutputToContain('Output PII detection')
+            ->assertSuccessful();
+    });
+
+    test('explains the resolved config for an agent attribute', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'Hello world.',
+            '--agent' => CommandTestAgentWithAegis::class,
+            '--explain' => true,
+        ])
+            ->expectsOutputToContain('Resolved configuration')
+            ->expectsOutputToContain('agent attribute')
+            ->expectsOutputToContain('phone:replace')
+            ->assertSuccessful();
+    });
+
+    test('serializes mask rules in explain output', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'Contact john@example.com for info.',
+            '--agent' => CommandTestAgentWithMaskRule::class,
+            '--explain' => true,
+        ])
+            ->expectsOutputToContain('email:mask,3,5')
+            ->assertSuccessful();
+    });
+
+    test('serializes full mask rules in explain output', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'Contact john@example.com for info.',
+            '--agent' => CommandTestAgentWithFullMaskRule::class,
+            '--explain' => true,
+        ])
+            ->expectsOutputToContain('email:mask')
+            ->assertSuccessful();
+    });
+
+    test('outputs structured json diagnostics', function (): void {
+        config(['aegis.pii.rules' => ['email:tokenize']]);
+
+        $this->artisan('aegis:test', [
+            'prompt' => 'Contact john@example.com for info.',
+            '--json' => true,
+        ])
+            ->expectsOutputToContain('stage')
+            ->assertSuccessful();
+    });
+
+    test('fails when the requested agent class does not exist', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'Hello world.',
+            '--agent' => 'Tests\\MissingAgent',
+        ])
+            ->expectsOutputToContain('does not exist')
+            ->assertExitCode(1);
+    });
+
+    test('fails when output stage is requested without a response', function (): void {
+        $this->artisan(TestPromptCommand::class, ['--stage' => 'output'])
+            ->expectsOutputToContain('A response is required')
+            ->assertExitCode(1);
+    });
+
+    test('fails when the stage option is invalid', function (): void {
+        $this->artisan(TestPromptCommand::class, [
+            'prompt' => 'Hello world.',
+            '--stage' => 'schema',
+        ])
+            ->expectsOutputToContain('Unsupported stage')
+            ->assertExitCode(1);
+    });
 });
+
+#[Aegis(piiRules: ['phone:replace'], blockInjections: false, strictMode: true, blockOutputPii: false)]
+class CommandTestAgentWithAegis {}
+
+#[Aegis(
+    piiEnabled: false,
+    blockInjections: false,
+)]
+class CommandTestAgentWithPiiDisabled {}
+
+#[Aegis(
+    piiRules: ['email:mask,3,5'],
+    blockInjections: false,
+)]
+class CommandTestAgentWithMaskRule {}
+
+#[Aegis(
+    piiRules: ['email:mask'],
+    blockInjections: false,
+)]
+class CommandTestAgentWithFullMaskRule {}
