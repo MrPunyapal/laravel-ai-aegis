@@ -7,25 +7,65 @@ use MrPunyapal\LaravelAiAegis\Commands\TestPromptCommand;
 
 describe('aegis:install', function (): void {
     test('publishes config file', function (): void {
-        $this->artisan(InstallCommand::class)
+        $this->artisan(InstallCommand::class, ['--no-interaction' => true])
             ->assertSuccessful();
     });
 
     test('displays success message', function (): void {
-        $this->artisan(InstallCommand::class)
+        $this->artisan(InstallCommand::class, ['--no-interaction' => true])
             ->expectsOutputToContain('Aegis installed successfully')
             ->assertSuccessful();
     });
 
     test('mentions pii.rules config key', function (): void {
-        $this->artisan(InstallCommand::class)
+        $this->artisan(InstallCommand::class, ['--no-interaction' => true])
             ->expectsOutputToContain('pii.rules')
             ->assertSuccessful();
     });
 
     test('mentions Aegis attribute', function (): void {
-        $this->artisan(InstallCommand::class)
+        $this->artisan(InstallCommand::class, ['--no-interaction' => true])
             ->expectsOutputToContain('#[Aegis]')
+            ->assertSuccessful();
+    });
+
+    test('supports force publishing the config file', function (): void {
+        $this->artisan(InstallCommand::class, [
+            '--no-interaction' => true,
+            '--force' => true,
+        ])
+            ->assertSuccessful();
+    });
+
+    test('renders customized guidance from options', function (): void {
+        $this->artisan(InstallCommand::class, [
+            '--no-interaction' => true,
+            '--cache-store' => 'database',
+            '--pii-rules' => ['email:tokenize', 'jwt:replace'],
+            '--with-pulse' => true,
+        ])
+            ->expectsOutputToContain('AEGIS_CACHE_STORE=database')
+            ->expectsOutputToContain("'pii.rules' => ['email:tokenize', 'jwt:replace']")
+            ->expectsOutputToContain('<livewire:aegis-card cols="3" />')
+            ->assertSuccessful();
+    });
+
+    test('asks onboarding questions when interactive', function (): void {
+        $this->artisan(InstallCommand::class)
+            ->expectsChoice(
+                'Which cache store should Aegis recommend for your environment?',
+                'file',
+                ['redis', 'database', 'file', 'array'],
+            )
+            ->expectsChoice(
+                'Which starter PII rules should be shown in the next steps?',
+                ['email:mask,3', 'jwt:replace'],
+                ['email:mask,3', 'phone:replace', 'ssn:tokenize', 'credit_card:tokenize', 'jwt:replace'],
+            )
+            ->expectsConfirmation('Include Laravel Pulse setup guidance in the next steps?', 'yes')
+            ->expectsOutputToContain('AEGIS_CACHE_STORE=file')
+            ->expectsOutputToContain("'pii.rules' => ['email:mask,3', 'jwt:replace']")
+            ->expectsOutputToContain('Pulse guidance')
             ->assertSuccessful();
     });
 });
