@@ -4,6 +4,8 @@
 [![Lint & Static Analysis](https://img.shields.io/github/actions/workflow/status/mrpunyapal/laravel-ai-aegis/lint-stan.yml?branch=main&label=lint+%26+stan&style=flat-square)](https://github.com/mrpunyapal/laravel-ai-aegis/actions?query=workflow%3ALint+branch%3Amain)
 [![Tests](https://img.shields.io/github/actions/workflow/status/mrpunyapal/laravel-ai-aegis/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mrpunyapal/laravel-ai-aegis/actions?query=workflow%3ATests+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/mrpunyapal/laravel-ai-aegis.svg?style=flat-square)](https://packagist.org/packages/mrpunyapal/laravel-ai-aegis)
+[![Laravel Version Compatibility](https://badge.laravel.cloud/badge/mrpunyapal/laravel-ai-aegis?style=flat-square)](https://packagist.org/packages/mrpunyapal/laravel-ai-aegis)
+[![PHP Version Compatibility](https://badge.laravel.cloud/php-badge/mrpunyapal/laravel-ai-aegis?style=flat-square)](https://packagist.org/packages/mrpunyapal/laravel-ai-aegis)
 
 A native, **local-first** security middleware for the **Laravel AI SDK**. Aegis intercepts every AI agent prompt and response to protect your users' data and your system prompts — without ever sending raw PII or adversarial payloads to an external LLM provider.
 
