@@ -132,7 +132,6 @@ final class InstallCommand extends Command
         $selectedRules = $this->choice(
             question: 'Which starter PII rules should be shown in the next steps?',
             choices: self::AVAILABLE_STARTER_RULES,
-            attempts: null,
             multiple: true,
         );
 

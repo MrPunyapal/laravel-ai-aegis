@@ -39,7 +39,7 @@ describe('ApprovalGuardRail', function (): void {
     });
 
     test('fails when requireApproval is true but no handler configured', function (): void {
-        $config = new AegisConfig(requireApproval: true, approvalHandler: null);
+        $config = new AegisConfig(requireApproval: true);
 
         $result = (new ApprovalGuardRail)->check('content', $config);
 
@@ -184,7 +184,7 @@ describe('InjectionGuardRail', function (): void {
     });
 
     test('fails when score meets or exceeds default threshold', function (): void {
-        $config = new AegisConfig(blockInjections: true, strictMode: false, injectionThreshold: null);
+        $config = new AegisConfig(blockInjections: true, strictMode: false);
 
         $result = (new InjectionGuardRail(new FixedScoreDetector(0.9)))->check('inject', $config);
 
@@ -193,7 +193,7 @@ describe('InjectionGuardRail', function (): void {
     });
 
     test('passes when score is below default threshold', function (): void {
-        $config = new AegisConfig(blockInjections: true, strictMode: false, injectionThreshold: null);
+        $config = new AegisConfig(blockInjections: true, strictMode: false);
 
         $result = (new InjectionGuardRail(new FixedScoreDetector(0.5)))->check('hello', $config);
 
@@ -201,7 +201,7 @@ describe('InjectionGuardRail', function (): void {
     });
 
     test('uses strict threshold in strict mode', function (): void {
-        $config = new AegisConfig(blockInjections: true, strictMode: true, injectionThreshold: null);
+        $config = new AegisConfig(blockInjections: true, strictMode: true);
 
         $result = (new InjectionGuardRail(new FixedScoreDetector(0.4), defaultThreshold: 0.7, strictThreshold: 0.3))
             ->check('hello', $config);
@@ -230,7 +230,7 @@ describe('MaxLengthGuardRail', function (): void {
     });
 
     test('passes when maxInputLength is null', function (): void {
-        $result = (new MaxLengthGuardRail)->check('content', new AegisConfig(maxInputLength: null));
+        $result = (new MaxLengthGuardRail)->check('content', new AegisConfig());
 
         expect($result->passed)->toBeTrue();
     });
