@@ -230,7 +230,7 @@ describe('MaxLengthGuardRail', function (): void {
     });
 
     test('passes when maxInputLength is null', function (): void {
-        $result = (new MaxLengthGuardRail)->check('content', new AegisConfig());
+        $result = (new MaxLengthGuardRail)->check('content', new AegisConfig);
 
         expect($result->passed)->toBeTrue();
     });
