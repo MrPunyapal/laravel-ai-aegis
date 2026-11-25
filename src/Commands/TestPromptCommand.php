@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MrPunyapal\LaravelAiAegis\Commands;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use MrPunyapal\LaravelAiAegis\Attributes\Aegis;
 use MrPunyapal\LaravelAiAegis\Contracts\InjectionDetectorInterface;
@@ -16,10 +14,12 @@ use MrPunyapal\LaravelAiAegis\Enums\PiiAction;
 use MrPunyapal\LaravelAiAegis\Support\AegisConfigResolver;
 use ReflectionClass;
 
-#[Signature('aegis:test {prompt? : The prompt text to analyse} {--agent= : Agent class to resolve Aegis attribute overrides from} {--response= : Response text to inspect for output-stage diagnostics} {--stage=full : Which stage to inspect (input, output, full)} {--explain : Show the resolved Aegis config} {--json : Output diagnostics as JSON}')]
-#[Description('Run prompt and response text through Aegis diagnostics using the resolved configuration')]
 final class TestPromptCommand extends Command
 {
+    protected $signature = 'aegis:test {prompt? : The prompt text to analyse} {--agent= : Agent class to resolve Aegis attribute overrides from} {--response= : Response text to inspect for output-stage diagnostics} {--stage=full : Which stage to inspect (input, output, full)} {--explain : Show the resolved Aegis config} {--json : Output diagnostics as JSON}';
+
+    protected $description = 'Run prompt and response text through Aegis diagnostics using the resolved configuration';
+
     public function __construct(
         private readonly InjectionDetectorInterface $injectionDetector,
         private readonly PiiTransformerInterface $transformer,

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace MrPunyapal\LaravelAiAegis\Commands;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use MrPunyapal\LaravelAiAegis\Middleware\AegisMiddleware;
 
-#[Signature('aegis:install {--force : Republish the config even if it already exists} {--cache-store= : Cache store to recommend in the next steps} {--pii-rules=* : Starter PII rules to recommend in the next steps} {--with-pulse : Include Laravel Pulse guidance in the next steps}')]
-#[Description('Publish the Aegis config file and display tailored getting-started instructions')]
 final class InstallCommand extends Command
 {
+    protected $signature = 'aegis:install {--force : Republish the config even if it already exists} {--cache-store= : Cache store to recommend in the next steps} {--pii-rules=* : Starter PII rules to recommend in the next steps} {--with-pulse : Include Laravel Pulse guidance in the next steps}';
+
+    protected $description = 'Publish the Aegis config file and display tailored getting-started instructions';
+
     private const string DEFAULT_CACHE_STORE = 'redis';
 
     /**
