@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace MrPunyapal\LaravelAiAegis\Commands;
 
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use MrPunyapal\LaravelAiAegis\Support\AegisDoctor;
 
-#[Signature('aegis:doctor {--json : Output the report as JSON}')]
-#[Description('Validate the current Aegis configuration and optional integrations')]
 final class DoctorCommand extends Command
 {
+    protected $signature = 'aegis:doctor {--json : Output the report as JSON}';
+
+    protected $description = 'Validate the current Aegis configuration and optional integrations';
+
     public function __construct(
         private readonly AegisDoctor $doctor,
     ) {
